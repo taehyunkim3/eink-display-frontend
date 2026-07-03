@@ -13,7 +13,7 @@ import {
   formatWind
 } from "@/lib/format";
 import { SCREEN_HEIGHT, SCREEN_WIDTH } from "@/lib/screen";
-import type { DashboardData, DeviceStatus, StockQuote } from "@/lib/types";
+import type { CalendarEvent, DashboardData, DeviceStatus, StockQuote } from "@/lib/types";
 
 type ScreenViewProps = {
   data: DashboardData;
@@ -61,6 +61,11 @@ function formatSignedStockValue(stock: StockQuote, value: string | null, suffix 
   if (stock.direction === "up") return `+${unsignedValue}${suffix}`;
   if (stock.direction === "down") return `-${unsignedValue}${suffix}`;
   return `${unsignedValue}${suffix}`;
+}
+
+function calendarEventMeta(event: CalendarEvent): string | null {
+  const values = [event.calendarName, event.location].filter(Boolean);
+  return values.length > 0 ? values.join(" · ") : null;
 }
 
 function WifiSignal({ status }: { status: DeviceStatus }) {
@@ -194,30 +199,47 @@ function OverviewPanel({ data }: { data: DashboardData }) {
             <div style={{ fontSize: 17, fontWeight: 900, marginBottom: 6 }}>다가오는 일정</div>
             {nextEvents.length > 0 ? (
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                {nextEvents.map((event) => (
-                  <div
-                    key={event.uid}
-                    style={{
-                      borderBottom: "1px solid #111",
-                      paddingBottom: 6,
-                      display: "flex",
-                      flexDirection: "column"
-                    }}
-                  >
-                    <div style={{ fontSize: 12, fontWeight: 800 }}>{formatEventTime(event)}</div>
+                {nextEvents.map((event) => {
+                  const meta = calendarEventMeta(event);
+                  return (
                     <div
+                      key={event.uid}
                       style={{
-                        fontSize: 16,
-                        fontWeight: 900,
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis"
+                        borderBottom: "1px solid #111",
+                        paddingBottom: 6,
+                        display: "flex",
+                        flexDirection: "column"
                       }}
                     >
-                      {event.title}
+                      <div style={{ fontSize: 12, fontWeight: 800 }}>{formatEventTime(event)}</div>
+                      <div
+                        style={{
+                          fontSize: 16,
+                          fontWeight: 900,
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis"
+                        }}
+                      >
+                        {event.title}
+                      </div>
+                      {meta ? (
+                        <div
+                          style={{
+                            fontSize: 11,
+                            fontWeight: 800,
+                            color: "#555",
+                            whiteSpace: "nowrap",
+                            overflow: "hidden",
+                            textOverflow: "ellipsis"
+                          }}
+                        >
+                          {meta}
+                        </div>
+                      ) : null}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             ) : (
               <EmptyState height={166}>일정 없음</EmptyState>
@@ -313,48 +335,51 @@ function CalendarPanel({ data }: { data: DashboardData }) {
     >
       <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 15 }}>
         {data.events.length > 0 ? (
-          data.events.slice(0, 6).map((event) => (
-            <div
-              key={event.uid}
-              style={{
-                display: "flex",
-                gap: 16,
-                paddingBottom: 8,
-                borderBottom: "1px solid #111"
-              }}
-            >
-              <div style={{ width: 132, fontSize: 15, fontWeight: 700 }}>
-                {formatEventTime(event)}
-              </div>
-              <div style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0 }}>
-                <div
-                  style={{
-                    fontSize: 20,
-                    fontWeight: 900,
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis"
-                  }}
-                >
-                  {event.title}
+          data.events.slice(0, 6).map((event) => {
+            const meta = calendarEventMeta(event);
+            return (
+              <div
+                key={event.uid}
+                style={{
+                  display: "flex",
+                  gap: 16,
+                  paddingBottom: 8,
+                  borderBottom: "1px solid #111"
+                }}
+              >
+                <div style={{ width: 132, fontSize: 15, fontWeight: 700 }}>
+                  {formatEventTime(event)}
                 </div>
-                {event.location ? (
+                <div style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0 }}>
                   <div
                     style={{
-                      fontSize: 14,
-                      fontWeight: 800,
-                      color: "#555",
+                      fontSize: 20,
+                      fontWeight: 900,
                       whiteSpace: "nowrap",
                       overflow: "hidden",
                       textOverflow: "ellipsis"
                     }}
                   >
-                    {event.location}
+                    {event.title}
                   </div>
-                ) : null}
+                  {meta ? (
+                    <div
+                      style={{
+                        fontSize: 14,
+                        fontWeight: 800,
+                        color: "#555",
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis"
+                      }}
+                    >
+                      {meta}
+                    </div>
+                  ) : null}
+                </div>
               </div>
-            </div>
-          ))
+            );
+          })
         ) : (
           <EmptyState>표시할 일정 없음</EmptyState>
         )}

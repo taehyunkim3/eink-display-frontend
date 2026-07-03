@@ -65,6 +65,7 @@ function parseIcs(text: string, sourceId: string): CalendarEvent[] {
   const lines = unfoldIcs(text);
   const events: IcsEvent[] = [];
   let current: IcsEvent | null = null;
+  let calendarName: string | undefined;
 
   for (const line of lines) {
     if (line === "BEGIN:VEVENT") {
@@ -78,14 +79,19 @@ function parseIcs(text: string, sourceId: string): CalendarEvent[] {
       continue;
     }
 
-    if (!current) continue;
-
     const separatorIndex = line.indexOf(":");
     if (separatorIndex < 0) continue;
 
     const rawKey = line.slice(0, separatorIndex);
-    const baseKey = rawKey.split(";")[0] as keyof IcsEvent;
+    const baseKey = rawKey.split(";")[0];
     const value = unescapeIcs(line.slice(separatorIndex + 1));
+
+    if (!current) {
+      if (baseKey === "X-WR-CALNAME") {
+        calendarName = value;
+      }
+      continue;
+    }
 
     if (baseKey === "DTSTART" || baseKey === "DTEND") {
       const parsed = parseIcsDate(rawKey, value);
@@ -109,6 +115,7 @@ function parseIcs(text: string, sourceId: string): CalendarEvent[] {
     .map((event) => ({
       uid: `${sourceId}:${event.UID ?? `${event.DTSTART.value}-${event.SUMMARY ?? "event"}`}`,
       title: event.SUMMARY ?? "제목 없는 일정",
+      calendarName,
       location: event.LOCATION,
       startsAt: event.DTSTART.date.toISOString(),
       endsAt: event.DTEND?.date.toISOString(),

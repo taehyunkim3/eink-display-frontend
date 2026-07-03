@@ -22,6 +22,7 @@ export type WeatherSnapshot = {
 export type CalendarEvent = {
   uid: string;
   title: string;
+  calendarName?: string;
   location?: string;
   startsAt: string;
   endsAt?: string;
