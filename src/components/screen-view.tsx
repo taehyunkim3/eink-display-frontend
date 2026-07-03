@@ -18,9 +18,11 @@ import type { DashboardData, DeviceStatus, StockQuote } from "@/lib/types";
 type ScreenViewProps = {
   data: DashboardData;
   deviceStatus: DeviceStatus;
+  photoSrc?: string;
 };
 
-const PAGE_TITLES = ["요약", "주간날씨", "캘린더", "국내주식", "기기상태"] as const;
+const DEFAULT_PHOTO_SRC = "/images/home-dog.png";
+const PAGE_TITLES = ["요약", "주간날씨", "캘린더", "국내주식", "기기상태", "사진"] as const;
 const PAGE_COUNT = PAGE_TITLES.length;
 
 const KOREAN_DAY = new Intl.DateTimeFormat("ko-KR", {
@@ -482,15 +484,46 @@ function DeviceDetails({
   );
 }
 
-function MainPanel({ page, data, deviceStatus }: ScreenViewProps & { page: number }) {
+function PhotoPanel({ photoSrc }: { photoSrc: string }) {
+  return (
+    <PanelShell title="사진" subtitle="반려견">
+      <div
+        style={{
+          marginTop: 16,
+          border: "2px solid #111",
+          display: "flex",
+          flex: 1,
+          minHeight: 0,
+          overflow: "hidden"
+        }}
+      >
+        {/* eslint-disable-next-line @next/next/no-img-element -- next/image is not supported inside next/og ImageResponse. */}
+        <img
+          src={photoSrc}
+          alt="웃고 있는 반려견"
+          width={466}
+          height={352}
+          style={{
+            width: "100%",
+            height: "100%",
+            objectFit: "cover"
+          }}
+        />
+      </div>
+    </PanelShell>
+  );
+}
+
+function MainPanel({ page, data, deviceStatus, photoSrc }: ScreenViewProps & { page: number }) {
   if (page === 0) return <OverviewPanel data={data} />;
   if (page === 1) return <WeeklyWeatherPanel data={data} />;
   if (page === 2) return <CalendarPanel data={data} />;
   if (page === 3) return <StocksPanel data={data} />;
+  if (page === 5) return <PhotoPanel photoSrc={photoSrc ?? DEFAULT_PHOTO_SRC} />;
   return <DeviceDetails deviceStatus={deviceStatus} page={page} />;
 }
 
-export function ScreenView({ data, deviceStatus }: ScreenViewProps) {
+export function ScreenView({ data, deviceStatus, photoSrc = DEFAULT_PHOTO_SRC }: ScreenViewProps) {
   const page = normalizePage(deviceStatus.page);
 
   return (
@@ -591,7 +624,7 @@ export function ScreenView({ data, deviceStatus }: ScreenViewProps) {
           </div>
         </section>
 
-        <MainPanel page={page} data={data} deviceStatus={deviceStatus} />
+        <MainPanel page={page} data={data} deviceStatus={deviceStatus} photoSrc={photoSrc} />
       </main>
     </div>
   );

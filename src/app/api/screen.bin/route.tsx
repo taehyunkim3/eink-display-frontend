@@ -5,6 +5,7 @@ import { ScreenView } from "@/components/screen-view";
 import { assertDeviceAuth } from "@/lib/auth";
 import { getDashboardData } from "@/lib/dashboard";
 import { parseDeviceStatus } from "@/lib/device-status";
+import { getHomePhotoSrc } from "@/lib/home-photo";
 import { SCREEN_HEIGHT, SCREEN_WIDTH } from "@/lib/screen";
 
 export const dynamic = "force-dynamic";
@@ -35,10 +36,14 @@ export async function GET(request: NextRequest) {
   const forceRefresh = request.nextUrl.searchParams.get("force") === "1";
   const data = await getDashboardData({ forceRefresh });
   const deviceStatus = parseDeviceStatus(request.nextUrl.searchParams);
-  const png = new ImageResponse(<ScreenView data={data} deviceStatus={deviceStatus} />, {
-    width: SCREEN_WIDTH,
-    height: SCREEN_HEIGHT
-  });
+  const photoSrc = await getHomePhotoSrc();
+  const png = new ImageResponse(
+    <ScreenView data={data} deviceStatus={deviceStatus} photoSrc={photoSrc} />,
+    {
+      width: SCREEN_WIDTH,
+      height: SCREEN_HEIGHT
+    }
+  );
 
   const pngBuffer = Buffer.from(await png.arrayBuffer());
   const grayscale = await sharp(pngBuffer)
