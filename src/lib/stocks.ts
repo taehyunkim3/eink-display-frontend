@@ -24,6 +24,8 @@ type NaverStockResponse = {
   datas?: NaverStockItem[];
 };
 
+type InvestorFlow = NonNullable<StockQuote["investorFlow"]>;
+
 type YahooChartResponse = {
   chart?: {
     result?: Array<{
@@ -51,6 +53,8 @@ type StockSymbol = {
   category: StockQuote["category"];
   yahooCode?: string;
 };
+
+type NaverMarket = "kospi" | "kosdaq";
 
 const DEFAULT_STOCKS = [
   ["krx", "005930", "삼성전자", "equity", "005930.KS"],
@@ -149,6 +153,165 @@ function directionFrom(item: NaverStockItem): StockQuote["direction"] {
   return "unknown";
 }
 
+function stripHtml(value: string): string {
+  return value
+    .replace(/<[^>]+>/g, " ")
+    .replace(/&nbsp;/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function parseSignedIntegerCell(value: string): number | null {
+  const text = stripHtml(value).replace(/,/g, "").replace(/\s/g, "");
+  const match = text.match(/[+-]?\d+/);
+  if (!match) return null;
+
+  const parsed = Number.parseInt(match[0], 10);
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function parseInvestorFlowHtml(html: string): InvestorFlow | null {
+  const table = html.match(/<caption>\s*외국인 기관\s*<\/caption>[\s\S]*?<tbody>([\s\S]*?)<\/tbody>/);
+  const tbody = table?.[1];
+  if (!tbody) return null;
+
+  const rowMatches = tbody.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/g);
+  for (const rowMatch of rowMatches) {
+    const cells = Array.from(rowMatch[1].matchAll(/<(?:th|td)[^>]*>([\s\S]*?)<\/(?:th|td)>/g)).map(
+      (cellMatch) => cellMatch[1]
+    );
+    const date = stripHtml(cells[0] ?? "");
+
+    if (!/^\d{2}\/\d{2}$/.test(date) || cells.length < 5) {
+      continue;
+    }
+
+    const foreign = parseSignedIntegerCell(cells[3]);
+    const institutional = parseSignedIntegerCell(cells[4]);
+    const retail =
+      typeof foreign === "number" && typeof institutional === "number"
+        ? -(foreign + institutional)
+        : null;
+
+    return {
+      date,
+      unit: "shares",
+      retail,
+      institutional,
+      foreign
+    };
+  }
+
+  return null;
+}
+
+async function getStockInvestorFlow(
+  code: string,
+  options: FetchFreshOptions
+): Promise<InvestorFlow | undefined> {
+  const url = new URL("https://finance.naver.com/item/main.naver");
+  url.searchParams.set("code", code);
+
+  const response = await fetch(
+    url,
+    marketFetchOptions(options, { "User-Agent": "Mozilla/5.0" })
+  );
+
+  if (!response.ok) {
+    throw new Error(`Investor flow request failed: ${code} ${response.status}`);
+  }
+
+  return parseInvestorFlowHtml(await response.text()) ?? undefined;
+}
+
+function marketSosok(market: NaverMarket): string {
+  return market === "kosdaq" ? "02" : "";
+}
+
+function marketFromYahooCode(code: string): NaverMarket | null {
+  if (code === "^KS11") return "kospi";
+  if (code === "^KQ11") return "kosdaq";
+  return null;
+}
+
+async function decodeEucKrResponse(response: Response): Promise<string> {
+  return new TextDecoder("euc-kr").decode(await response.arrayBuffer());
+}
+
+function todayKoreaBizdate(): string {
+  return new Intl.DateTimeFormat("en-CA", {
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+    timeZone: "Asia/Seoul"
+  })
+    .format(new Date())
+    .replaceAll("-", "");
+}
+
+function parseMarketBizdate(html: string): string {
+  return html.match(/investorDealTrendTime\.naver\?bizdate=(\d{8})/)?.[1] ?? todayKoreaBizdate();
+}
+
+function parseMarketInvestorFlowHtml(html: string): InvestorFlow | null {
+  const rowMatches = html.matchAll(/<tr[^>]*>([\s\S]*?)<\/tr>/g);
+
+  for (const rowMatch of rowMatches) {
+    const cells = Array.from(rowMatch[1].matchAll(/<td[^>]*>([\s\S]*?)<\/td>/g)).map(
+      (cellMatch) => cellMatch[1]
+    );
+    const time = stripHtml(cells[0] ?? "");
+
+    if (!/^\d{2}:\d{2}$/.test(time) || cells.length < 4) {
+      continue;
+    }
+
+    return {
+      date: time,
+      unit: "hundredMillionKrw",
+      retail: parseSignedIntegerCell(cells[1]),
+      foreign: parseSignedIntegerCell(cells[2]),
+      institutional: parseSignedIntegerCell(cells[3])
+    };
+  }
+
+  return null;
+}
+
+async function getMarketInvestorFlow(
+  market: NaverMarket,
+  options: FetchFreshOptions
+): Promise<InvestorFlow | undefined> {
+  const sosok = marketSosok(market);
+  const pageUrl = new URL("https://finance.naver.com/sise/sise_trans_style.naver");
+  if (sosok) pageUrl.searchParams.set("sosok", sosok);
+
+  const pageResponse = await fetch(
+    pageUrl,
+    marketFetchOptions(options, { "User-Agent": "Mozilla/5.0" })
+  );
+
+  if (!pageResponse.ok) {
+    throw new Error(`Market investor page failed: ${market} ${pageResponse.status}`);
+  }
+
+  const bizdate = parseMarketBizdate(await decodeEucKrResponse(pageResponse));
+  const dataUrl = new URL("https://finance.naver.com/sise/investorDealTrendTime.naver");
+  dataUrl.searchParams.set("bizdate", bizdate);
+  dataUrl.searchParams.set("sosok", sosok);
+
+  const dataResponse = await fetch(
+    dataUrl,
+    marketFetchOptions(options, { "User-Agent": "Mozilla/5.0" })
+  );
+
+  if (!dataResponse.ok) {
+    throw new Error(`Market investor flow failed: ${market} ${dataResponse.status}`);
+  }
+
+  return parseMarketInvestorFlowHtml(await decodeEucKrResponse(dataResponse)) ?? undefined;
+}
+
 async function getStockQuote(
   code: string,
   fallbackName: string,
@@ -167,13 +330,19 @@ async function getStockQuote(
   const data = (await response.json()) as NaverStockResponse;
   const item = data.datas?.[0] ?? {};
   let history: number[] = [];
+  let investorFlow: InvestorFlow | undefined;
 
-  if (yahooCode) {
-    try {
-      history = (await getYahooSnapshot(yahooCode, options)).history;
-    } catch {
-      history = [];
-    }
+  const [historyResult, investorFlowResult] = await Promise.allSettled([
+    yahooCode ? getYahooSnapshot(yahooCode, options) : Promise.resolve({ history: [] }),
+    getStockInvestorFlow(code, options)
+  ]);
+
+  if (historyResult.status === "fulfilled") {
+    history = historyResult.value.history;
+  }
+
+  if (investorFlowResult.status === "fulfilled") {
+    investorFlow = investorFlowResult.value;
   }
 
   return {
@@ -186,7 +355,8 @@ async function getStockQuote(
     changePercent: item.fluctuationsRatio ?? null,
     direction: directionFrom(item),
     tradedAt: item.localTradedAt ?? null,
-    history
+    history,
+    investorFlow
   };
 }
 
@@ -291,7 +461,19 @@ async function getYahooQuote(
   category: StockQuote["category"],
   options: FetchFreshOptions
 ): Promise<StockQuote> {
-  const snapshot = await getYahooSnapshot(code, options);
+  const market = marketFromYahooCode(code);
+  const [snapshotResult, investorFlowResult] = await Promise.allSettled([
+    getYahooSnapshot(code, options),
+    market ? getMarketInvestorFlow(market, options) : Promise.resolve(undefined)
+  ]);
+
+  if (snapshotResult.status === "rejected") {
+    throw snapshotResult.reason;
+  }
+
+  const snapshot = snapshotResult.value;
+  const investorFlow =
+    investorFlowResult.status === "fulfilled" ? investorFlowResult.value : undefined;
   const change =
     typeof snapshot.price === "number" && typeof snapshot.previousClose === "number"
       ? snapshot.price - snapshot.previousClose
@@ -311,7 +493,8 @@ async function getYahooQuote(
     changePercent: Math.abs(changePercent).toFixed(2),
     direction: directionFromChange(change),
     tradedAt: snapshot.tradedAt,
-    history: snapshot.history
+    history: snapshot.history,
+    investorFlow
   };
 }
 

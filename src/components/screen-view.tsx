@@ -82,6 +82,46 @@ function formatSignedStockValue(stock: StockQuote, value: string | null, suffix 
   return `${unsignedValue}${suffix}`;
 }
 
+function formatInvestorFlowValue(flow: StockQuote["investorFlow"], value: number | null | undefined): string {
+  if (typeof value !== "number" || !Number.isFinite(value)) return "--";
+  if (value === 0) return "0";
+
+  const sign = value > 0 ? "+" : "-";
+  const absoluteValue = Math.abs(value);
+
+  if (flow?.unit === "hundredMillionKrw") {
+    if (absoluteValue >= 10_000) {
+      return `${sign}${Number((absoluteValue / 10_000).toFixed(1))}조`;
+    }
+
+    return `${sign}${absoluteValue.toLocaleString("ko-KR")}억`;
+  }
+
+  if (absoluteValue >= 100_000_000) {
+    return `${sign}${Number((absoluteValue / 100_000_000).toFixed(1))}억`;
+  }
+
+  if (absoluteValue >= 10_000) {
+    return `${sign}${Math.round(absoluteValue / 10_000).toLocaleString("ko-KR")}만`;
+  }
+
+  if (absoluteValue >= 1_000) {
+    return `${sign}${Math.round(absoluteValue / 1_000)}천`;
+  }
+
+  return `${sign}${absoluteValue.toLocaleString("ko-KR")}`;
+}
+
+function investorFlowValueParts(flow: StockQuote["investorFlow"], value: number | null | undefined) {
+  const formattedValue = formatInvestorFlowValue(flow, value);
+  const sign = formattedValue.match(/^[+-]/)?.[0] ?? "";
+
+  return {
+    sign,
+    body: sign ? formattedValue.slice(1) : formattedValue
+  };
+}
+
 function calendarEventMeta(event: CalendarEvent): string | null {
   const values = [event.calendarName, event.location].filter(Boolean);
   return values.length > 0 ? values.join(" · ") : null;
@@ -878,6 +918,39 @@ function StockRow({ stock, compact = false }: { stock: StockQuote; compact?: boo
   );
 }
 
+function InvestorFlowMetric({
+  label,
+  flow,
+  value,
+  justifyContent
+}: {
+  label: string;
+  flow: StockQuote["investorFlow"];
+  value: number | null | undefined;
+  justifyContent: "flex-start" | "center" | "flex-end";
+}) {
+  const parts = investorFlowValueParts(flow, value);
+
+  return (
+    <span
+      style={{
+        flex: 1,
+        display: "flex",
+        alignItems: "baseline",
+        justifyContent,
+        minWidth: 0,
+        whiteSpace: "nowrap"
+      }}
+    >
+      <span>{label} </span>
+      {parts.sign ? (
+        <span style={{ fontSize: 14, lineHeight: 0.7, fontWeight: 1000 }}>{parts.sign}</span>
+      ) : null}
+      <span>{parts.body}</span>
+    </span>
+  );
+}
+
 function MarketTile({
   stock,
   height,
@@ -893,7 +966,8 @@ function MarketTile({
 }) {
   const change = formatSignedStockValue(stock, stock.change);
   const rate = formatSignedStockValue(stock, stock.changePercent, "%");
-  const graphHeight = 55;
+  const hasInvestorFlow = Boolean(stock.investorFlow);
+  const graphHeight = hasInvestorFlow ? 43 : 55;
   const graphWidth = width - 12;
 
   return (
@@ -952,6 +1026,39 @@ function MarketTile({
         </div>
       </div>
       <PercentSparkline stock={stock} width={graphWidth} height={graphHeight} />
+      {hasInvestorFlow ? (
+        <div
+          style={{
+            display: "flex",
+            borderTop: "1px dashed #111",
+            borderBottom: "1px dashed #111",
+            padding: "2px 0",
+            fontSize: 9,
+            lineHeight: 1,
+            gap: 4,
+            whiteSpace: "nowrap"
+          }}
+        >
+          <InvestorFlowMetric
+            label="개인"
+            flow={stock.investorFlow}
+            value={stock.investorFlow?.retail}
+            justifyContent="flex-start"
+          />
+          <InvestorFlowMetric
+            label="기관"
+            flow={stock.investorFlow}
+            value={stock.investorFlow?.institutional}
+            justifyContent="center"
+          />
+          <InvestorFlowMetric
+            label="외인"
+            flow={stock.investorFlow}
+            value={stock.investorFlow?.foreign}
+            justifyContent="flex-end"
+          />
+        </div>
+      ) : null}
       <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "flex-end" }}>
         <div
           style={{
@@ -1006,7 +1113,7 @@ function MarketScaleTile({
       <div style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 13, lineHeight: 1.1 }}>
         <span>점선: 전일 종가 0%</span>
         <span>그래프: 1일 15분봉</span>
-        <span>이동평균선 없음</span>
+        <span>개인/기관/외인 순매수</span>
       </div>
       <div style={{ display: "flex", justifyContent: "flex-end", fontSize: 18 }}>
         % 기준

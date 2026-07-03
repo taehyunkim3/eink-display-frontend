@@ -50,6 +50,13 @@ export type StockQuote = {
   direction: "up" | "down" | "flat" | "unknown";
   tradedAt: string | null;
   history: number[];
+  investorFlow?: {
+    date: string | null;
+    unit: "shares" | "hundredMillionKrw";
+    retail: number | null;
+    institutional: number | null;
+    foreign: number | null;
+  };
 };
 
 export type DashboardData = {
