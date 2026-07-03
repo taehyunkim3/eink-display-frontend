@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 const BYTES_PER_ROW = SCREEN_WIDTH / 8;
-const UI_BLACK_THRESHOLD = 168;
+const UI_BLACK_THRESHOLD = 148;
 const BAYER_8X8 = [
   0, 48, 12, 60, 3, 51, 15, 63,
   32, 16, 44, 28, 35, 19, 47, 31,
@@ -73,7 +73,7 @@ export async function GET(request: NextRequest) {
   const image = sharp(pngBuffer).flatten({ background: "#ffffff" }).grayscale();
   const grayscale = await (ditherPhoto
     ? image.linear(1.12, 18)
-    : image.linear(1.42, -32).sharpen()
+    : image.linear(1.24, -18)
   )
     .raw()
     .toBuffer();

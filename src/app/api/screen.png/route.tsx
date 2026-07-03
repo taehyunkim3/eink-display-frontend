@@ -42,9 +42,8 @@ export async function GET(request: NextRequest) {
     : await sharp(pngBuffer)
       .flatten({ background: "#ffffff" })
       .grayscale()
-      .linear(1.42, -32)
-      .sharpen()
-      .threshold(168)
+      .linear(1.24, -18)
+      .threshold(148)
       .png()
       .toBuffer();
 

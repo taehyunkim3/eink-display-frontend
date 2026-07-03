@@ -32,6 +32,9 @@ export const SCREEN_PAGE_TITLES = [
   "사진"
 ] as const;
 export const SCREEN_PAGE_COUNT = SCREEN_PAGE_TITLES.length;
+const EINK_TEXT_WEIGHT = 600;
+const EINK_BOLD_WEIGHT = 700;
+const EINK_HEAVY_WEIGHT = 800;
 
 const KOREAN_DATE_PARTS = new Intl.DateTimeFormat("en-CA", {
   year: "numeric",
@@ -515,8 +518,8 @@ function PanelShell({
           borderBottom: "2px solid #111"
         }}
       >
-        <div style={{ fontSize: 30, fontWeight: 900 }}>{title}</div>
-        <div style={{ fontSize: 15, fontWeight: 800 }}>{subtitle}</div>
+        <div style={{ fontSize: 30, fontWeight: EINK_HEAVY_WEIGHT }}>{title}</div>
+        <div style={{ fontSize: 15, fontWeight: EINK_BOLD_WEIGHT }}>{subtitle}</div>
       </div>
       {children}
       {footer ? (
@@ -524,8 +527,8 @@ function PanelShell({
           style={{
             marginTop: "auto",
             fontSize: 13,
-            fontWeight: 800,
-            color: "#555",
+            fontWeight: EINK_BOLD_WEIGHT,
+            color: "#111",
             whiteSpace: "nowrap",
             overflow: "hidden",
             textOverflow: "ellipsis"
@@ -548,7 +551,7 @@ function EmptyState({ children, height = 238 }: { children: React.ReactNode; hei
         justifyContent: "center",
         border: "2px dashed #111",
         fontSize: 22,
-        fontWeight: 800,
+        fontWeight: EINK_BOLD_WEIGHT,
         textAlign: "center"
       }}
     >
@@ -579,7 +582,7 @@ function OverviewPanel({ data }: { data: DashboardData }) {
                 display: "flex",
                 flexDirection: "column",
                 gap: 4,
-                fontWeight: 900
+                fontWeight: EINK_BOLD_WEIGHT
               }}
             >
               <span style={{ fontSize: 14 }}>{label}</span>
@@ -590,7 +593,7 @@ function OverviewPanel({ data }: { data: DashboardData }) {
 
         <div style={{ display: "flex", gap: 16, minHeight: 0 }}>
           <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
-            <div style={{ fontSize: 17, fontWeight: 900, marginBottom: 6 }}>다가오는 일정</div>
+            <div style={{ fontSize: 17, fontWeight: EINK_BOLD_WEIGHT, marginBottom: 6 }}>다가오는 일정</div>
             {nextEvents.length > 0 ? (
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 {nextEvents.map((event) => {
@@ -605,11 +608,11 @@ function OverviewPanel({ data }: { data: DashboardData }) {
                         flexDirection: "column"
                       }}
                     >
-                      <div style={{ fontSize: 12, fontWeight: 800 }}>{formatEventTime(event)}</div>
+                      <div style={{ fontSize: 12, fontWeight: EINK_TEXT_WEIGHT }}>{formatEventTime(event)}</div>
                       <div
                         style={{
                           fontSize: 16,
-                          fontWeight: 900,
+                          fontWeight: EINK_BOLD_WEIGHT,
                           whiteSpace: "nowrap",
                           overflow: "hidden",
                           textOverflow: "ellipsis"
@@ -621,8 +624,8 @@ function OverviewPanel({ data }: { data: DashboardData }) {
                         <div
                           style={{
                             fontSize: 11,
-                            fontWeight: 800,
-                            color: "#555",
+                            fontWeight: EINK_TEXT_WEIGHT,
+                            color: "#111",
                             whiteSpace: "nowrap",
                             overflow: "hidden",
                             textOverflow: "ellipsis"
@@ -641,7 +644,7 @@ function OverviewPanel({ data }: { data: DashboardData }) {
           </div>
 
           <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
-            <div style={{ fontSize: 17, fontWeight: 900, marginBottom: 6 }}>시장 지표</div>
+            <div style={{ fontSize: 17, fontWeight: EINK_BOLD_WEIGHT, marginBottom: 6 }}>시장 지표</div>
             {topStocks.length > 0 ? (
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 {topStocks.map((stock) => (
@@ -679,7 +682,7 @@ function WeeklyWeatherPanel({ data }: { data: DashboardData }) {
           alignItems: "center",
           height: 22,
           borderBottom: "1px solid #111",
-          fontWeight: 900
+          fontWeight: EINK_BOLD_WEIGHT
         }}
       >
         <div style={{ display: "flex", fontSize: 16 }}>{data.weather.label} 7일 예보</div>
@@ -702,7 +705,7 @@ function WeeklyWeatherPanel({ data }: { data: DashboardData }) {
                 display: "flex",
                 alignItems: "center",
                 gap: 7,
-                fontWeight: 900
+                fontWeight: EINK_BOLD_WEIGHT
               }}
             >
               <div style={{ display: "flex", width: 58, flexDirection: "column" }}>
@@ -828,7 +831,7 @@ function CalendarPanel({ data }: { data: DashboardData }) {
                 alignItems: "center",
                 justifyContent: "center",
                 fontSize: 13,
-                fontWeight: 900
+                fontWeight: EINK_BOLD_WEIGHT
               }}
             >
               {label}
@@ -867,7 +870,7 @@ function CalendarPanel({ data }: { data: DashboardData }) {
                     style={{
                       display: "flex",
                       fontSize: isFirstDayOfMonth ? 12 : 14,
-                      fontWeight: 900,
+                      fontWeight: EINK_BOLD_WEIGHT,
                       lineHeight: 1
                     }}
                   >
@@ -882,7 +885,7 @@ function CalendarPanel({ data }: { data: DashboardData }) {
                         borderLeft: "2px solid #111",
                         paddingLeft: 3,
                         minWidth: 0,
-                        fontWeight: 900,
+                        fontWeight: EINK_TEXT_WEIGHT,
                         lineHeight: 1.05
                       }}
                     >
@@ -903,7 +906,7 @@ function CalendarPanel({ data }: { data: DashboardData }) {
                           display: "flex",
                           minWidth: 0,
                           fontSize: 8,
-                          color: "#555",
+                          color: "#111",
                           whiteSpace: "nowrap",
                           overflow: "hidden",
                           textOverflow: "ellipsis"
@@ -914,7 +917,7 @@ function CalendarPanel({ data }: { data: DashboardData }) {
                     </div>
                   ))}
                   {dayEvents.length > 2 ? (
-                    <div style={{ display: "flex", fontSize: 10, fontWeight: 900 }}>{`+${dayEvents.length - 2}`}</div>
+                    <div style={{ display: "flex", fontSize: 10, fontWeight: EINK_BOLD_WEIGHT }}>{`+${dayEvents.length - 2}`}</div>
                   ) : null}
                   {isToday ? <TodayCellBorder /> : null}
                 </div>
@@ -971,7 +974,7 @@ function WeekCalendarPanel({ data }: { data: DashboardData }) {
                 borderBottom: "1px solid #111",
                 display: "flex",
                 flexDirection: "column",
-                fontWeight: 900,
+                fontWeight: EINK_BOLD_WEIGHT,
                 minWidth: 0
               }}
             >
@@ -1036,7 +1039,7 @@ function WeekCalendarPanel({ data }: { data: DashboardData }) {
                         style={{
                           display: "flex",
                           fontSize: 9,
-                          color: "#555",
+                          color: "#111",
                           minWidth: 0,
                           whiteSpace: "nowrap",
                           overflow: "hidden",
@@ -1055,7 +1058,7 @@ function WeekCalendarPanel({ data }: { data: DashboardData }) {
                       alignItems: "center",
                       justifyContent: "center",
                       fontSize: 12,
-                      color: "#555"
+                      color: "#111"
                     }}
                   >
                     일정 없음
@@ -1086,7 +1089,7 @@ function StockRow({ stock, compact = false }: { stock: StockQuote; compact?: boo
         gap: 12,
         paddingBottom: compact ? 7 : 9,
         borderBottom: "1px solid #111",
-        fontWeight: 900
+        fontWeight: EINK_BOLD_WEIGHT
       }}
     >
       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
@@ -1103,7 +1106,7 @@ function StockRow({ stock, compact = false }: { stock: StockQuote; compact?: boo
         <div
           style={{
             fontSize: compact ? 12 : 14,
-            color: "#555",
+            color: "#111",
             display: "flex"
           }}
         >
@@ -1162,7 +1165,7 @@ function InvestorFlowMetric({
     >
       <span>{label} </span>
       {parts.sign ? (
-        <span style={{ fontSize: 14, lineHeight: 0.7, fontWeight: 1000 }}>{parts.sign}</span>
+        <span style={{ fontSize: 14, lineHeight: 0.7, fontWeight: EINK_HEAVY_WEIGHT }}>{parts.sign}</span>
       ) : null}
       <span>{parts.body}</span>
     </span>
@@ -1202,7 +1205,7 @@ function MarketTile({
         borderLeft: columnIndex === 0 ? "1px solid #111" : "0px solid transparent",
         borderRight: "1px solid #111",
         borderBottom: "1px solid #111",
-        fontWeight: 900
+        fontWeight: EINK_BOLD_WEIGHT
       }}
     >
       <div style={{ display: "flex", alignItems: "flex-start", gap: 5 }}>
@@ -1226,7 +1229,7 @@ function MarketTile({
           >
             {stock.name}
           </div>
-          <div style={{ display: "flex", fontSize: 10, color: "#555", lineHeight: 1.15 }}>
+          <div style={{ display: "flex", fontSize: 10, color: "#111", lineHeight: 1.15 }}>
             {`${stockCategoryLabel(stock)} · ${stock.code}${stock.market ? ` · ${stock.market}` : ""}`}
           </div>
         </div>
@@ -1324,7 +1327,7 @@ function MarketScaleTile({
         display: "flex",
         flexDirection: "column",
         justifyContent: "space-between",
-        fontWeight: 900
+        fontWeight: EINK_BOLD_WEIGHT
       }}
     >
       <div style={{ display: "flex", fontSize: 16 }}>그래프 기준</div>
@@ -1441,7 +1444,7 @@ function DeviceDetails({
           }}
         >
           <WifiSignal status={deviceStatus} />
-          <div style={{ marginTop: 12, fontSize: 16, fontWeight: 900 }}>신호강도</div>
+          <div style={{ marginTop: 12, fontSize: 16, fontWeight: EINK_BOLD_WEIGHT }}>신호강도</div>
         </div>
 
         <div style={{ display: "flex", flex: 1, flexDirection: "column", gap: 10 }}>
@@ -1455,7 +1458,7 @@ function DeviceDetails({
                 paddingBottom: 9,
                 borderBottom: "1px solid #111",
                 fontSize: 18,
-                fontWeight: 900
+                fontWeight: EINK_BOLD_WEIGHT
               }}
             >
               <span>{label}</span>
@@ -1545,16 +1548,16 @@ export function ScreenView({ data, deviceStatus, photoSrc = DEFAULT_PHOTO_SRC }:
           justifyContent: "space-between",
           borderBottom: "2px solid #111",
           fontSize: 15,
-          fontWeight: 800
+          fontWeight: EINK_BOLD_WEIGHT
         }}
       >
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
           <span>{SCREEN_PAGE_TITLES[page]}</span>
-          <span style={{ fontWeight: 700 }}>|</span>
+          <span style={{ fontWeight: EINK_TEXT_WEIGHT }}>|</span>
           <span>
             {page + 1}/{SCREEN_PAGE_COUNT}
           </span>
-          <span style={{ fontWeight: 700 }}>|</span>
+          <span style={{ fontWeight: EINK_TEXT_WEIGHT }}>|</span>
           <span>{formatGeneratedAt(data.generatedAt)}</span>
         </div>
         <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
@@ -1580,14 +1583,14 @@ export function ScreenView({ data, deviceStatus, photoSrc = DEFAULT_PHOTO_SRC }:
             }}
           >
             <div style={{ display: "flex", flexDirection: "column" }}>
-              <div style={{ fontSize: 18, fontWeight: 700 }}>{data.weather.label}</div>
+              <div style={{ fontSize: 18, fontWeight: EINK_TEXT_WEIGHT }}>{data.weather.label}</div>
               <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 14 }}>
                 <WeatherIcon code={data.weather.weatherCode} size={64} />
-                <div style={{ fontSize: 78, lineHeight: 0.9, fontWeight: 900 }}>
+                <div style={{ fontSize: 78, lineHeight: 0.9, fontWeight: EINK_HEAVY_WEIGHT }}>
                   {formatTemperature(data.weather.temperatureC)}
                 </div>
               </div>
-              <div style={{ marginTop: 10, fontSize: 26, fontWeight: 800 }}>
+              <div style={{ marginTop: 10, fontSize: 26, fontWeight: EINK_BOLD_WEIGHT }}>
                 {data.weather.condition}
               </div>
             </div>
@@ -1608,7 +1611,7 @@ export function ScreenView({ data, deviceStatus, photoSrc = DEFAULT_PHOTO_SRC }:
                     display: "flex",
                     flexDirection: "column",
                     fontSize: 15,
-                    fontWeight: 700
+                    fontWeight: EINK_TEXT_WEIGHT
                   }}
                 >
                   <span>{label}</span>
