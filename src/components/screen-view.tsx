@@ -844,7 +844,7 @@ export function ScreenView({ data, deviceStatus, photoSrc = DEFAULT_PHOTO_SRC }:
         boxSizing: "border-box",
         display: "flex",
         flexDirection: "column",
-        background: "#f8f6ed",
+        background: "#fff",
         color: "#111",
         fontFamily: "Arial, Helvetica, sans-serif",
         border: "3px solid #111",
