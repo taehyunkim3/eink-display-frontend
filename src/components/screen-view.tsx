@@ -139,11 +139,11 @@ function PanelShell({
   );
 }
 
-function EmptyState({ children }: { children: React.ReactNode }) {
+function EmptyState({ children, height = 238 }: { children: React.ReactNode; height?: number }) {
   return (
     <div
       style={{
-        height: 238,
+        height,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -159,13 +159,13 @@ function EmptyState({ children }: { children: React.ReactNode }) {
 }
 
 function OverviewPanel({ data }: { data: DashboardData }) {
-  const nextEvents = data.events.slice(0, 3);
-  const topStocks = data.stocks.slice(0, 3);
+  const nextEvents = data.events.slice(0, 2);
+  const topStocks = data.stocks.slice(0, 2);
 
   return (
     <PanelShell title="오늘 요약" subtitle="날씨 · 일정 · 주식">
-      <div style={{ display: "flex", flexDirection: "column", gap: 16, marginTop: 16 }}>
-        <div style={{ display: "flex", gap: 18 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 12 }}>
+        <div style={{ display: "flex", gap: 14 }}>
           {[
             ["체감", formatTemperature(data.weather.apparentTemperatureC)],
             ["습도", formatPercent(data.weather.humidityPercent)],
@@ -176,38 +176,38 @@ function OverviewPanel({ data }: { data: DashboardData }) {
               style={{
                 flex: 1,
                 border: "2px solid #111",
-                padding: "12px 14px",
+                padding: "9px 12px",
                 display: "flex",
                 flexDirection: "column",
-                gap: 6,
+                gap: 4,
                 fontWeight: 900
               }}
             >
-              <span style={{ fontSize: 15 }}>{label}</span>
-              <span style={{ fontSize: 25 }}>{value}</span>
+              <span style={{ fontSize: 14 }}>{label}</span>
+              <span style={{ fontSize: 22 }}>{value}</span>
             </div>
           ))}
         </div>
 
-        <div style={{ display: "flex", gap: 20, minHeight: 206 }}>
+        <div style={{ display: "flex", gap: 16, minHeight: 0 }}>
           <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
-            <div style={{ fontSize: 18, fontWeight: 900, marginBottom: 8 }}>다가오는 일정</div>
+            <div style={{ fontSize: 17, fontWeight: 900, marginBottom: 6 }}>다가오는 일정</div>
             {nextEvents.length > 0 ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 {nextEvents.map((event) => (
                   <div
                     key={event.uid}
                     style={{
                       borderBottom: "1px solid #111",
-                      paddingBottom: 7,
+                      paddingBottom: 6,
                       display: "flex",
                       flexDirection: "column"
                     }}
                   >
-                    <div style={{ fontSize: 13, fontWeight: 800 }}>{formatEventTime(event)}</div>
+                    <div style={{ fontSize: 12, fontWeight: 800 }}>{formatEventTime(event)}</div>
                     <div
                       style={{
-                        fontSize: 18,
+                        fontSize: 16,
                         fontWeight: 900,
                         whiteSpace: "nowrap",
                         overflow: "hidden",
@@ -220,20 +220,20 @@ function OverviewPanel({ data }: { data: DashboardData }) {
                 ))}
               </div>
             ) : (
-              <EmptyState>일정 없음</EmptyState>
+              <EmptyState height={166}>일정 없음</EmptyState>
             )}
           </div>
 
           <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
-            <div style={{ fontSize: 18, fontWeight: 900, marginBottom: 8 }}>국내 주식</div>
+            <div style={{ fontSize: 17, fontWeight: 900, marginBottom: 6 }}>국내 주식</div>
             {topStocks.length > 0 ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 {topStocks.map((stock) => (
                   <StockRow key={stock.code} stock={stock} compact />
                 ))}
               </div>
             ) : (
-              <EmptyState>주식 정보 없음</EmptyState>
+              <EmptyState height={166}>주식 정보 없음</EmptyState>
             )}
           </div>
         </div>
