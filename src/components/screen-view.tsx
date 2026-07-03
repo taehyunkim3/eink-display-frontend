@@ -136,33 +136,264 @@ function weatherIconKind(code: number | null): "sun" | "cloud" | "rain" | "snow"
   return "cloud";
 }
 
+function CloudShape({ size, top = 6 }: { size: number; top?: number }) {
+  const stroke = Math.max(2, Math.round(size / 18));
+
+  return (
+    <div
+      style={{
+        position: "absolute",
+        left: Math.round(size * 0.11),
+        top,
+        width: Math.round(size * 0.78),
+        height: Math.round(size * 0.55),
+        display: "flex"
+      }}
+    >
+      <div
+        style={{
+          position: "absolute",
+          left: Math.round(size * 0.1),
+          top: Math.round(size * 0.25),
+          width: Math.round(size * 0.62),
+          height: Math.round(size * 0.26),
+          border: `${stroke}px solid #111`,
+          borderRadius: Math.round(size * 0.16),
+          background: "#fff"
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          left: Math.round(size * 0.18),
+          top: Math.round(size * 0.1),
+          width: Math.round(size * 0.27),
+          height: Math.round(size * 0.27),
+          border: `${stroke}px solid #111`,
+          borderRadius: Math.round(size * 0.15),
+          background: "#fff"
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          left: Math.round(size * 0.38),
+          top: Math.round(size * 0.02),
+          width: Math.round(size * 0.34),
+          height: Math.round(size * 0.34),
+          border: `${stroke}px solid #111`,
+          borderRadius: Math.round(size * 0.18),
+          background: "#fff"
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          left: Math.round(size * 0.31),
+          top: Math.round(size * 0.37),
+          width: Math.round(size * 0.05),
+          height: Math.round(size * 0.05),
+          borderRadius: Math.round(size * 0.03),
+          background: "#111"
+        }}
+      />
+      <div
+        style={{
+          position: "absolute",
+          left: Math.round(size * 0.53),
+          top: Math.round(size * 0.37),
+          width: Math.round(size * 0.05),
+          height: Math.round(size * 0.05),
+          borderRadius: Math.round(size * 0.03),
+          background: "#111"
+        }}
+      />
+    </div>
+  );
+}
+
 function WeatherIcon({ code, size = 58 }: { code: number | null; size?: number }) {
   const kind = weatherIconKind(code);
-  const label = {
-    sun: "해",
-    cloud: "구름",
-    rain: "비",
-    snow: "눈",
-    storm: "번개",
-    fog: "안개"
-  }[kind];
+  const stroke = Math.max(2, Math.round(size / 18));
+  const rayLength = Math.round(size * 0.16);
+  const rayWidth = Math.max(2, Math.round(size / 20));
+  const center = Math.round(size / 2);
+
+  if (kind === "sun") {
+    const rays = [
+      { left: center - rayWidth / 2, top: 2, width: rayWidth, height: rayLength, rotate: 0 },
+      { left: center - rayWidth / 2, top: size - rayLength - 2, width: rayWidth, height: rayLength, rotate: 0 },
+      { left: 2, top: center - rayWidth / 2, width: rayLength, height: rayWidth, rotate: 0 },
+      { left: size - rayLength - 2, top: center - rayWidth / 2, width: rayLength, height: rayWidth, rotate: 0 },
+      { left: Math.round(size * 0.14), top: Math.round(size * 0.14), width: rayLength, height: rayWidth, rotate: 45 },
+      { left: Math.round(size * 0.65), top: Math.round(size * 0.14), width: rayLength, height: rayWidth, rotate: -45 },
+      { left: Math.round(size * 0.14), top: Math.round(size * 0.72), width: rayLength, height: rayWidth, rotate: -45 },
+      { left: Math.round(size * 0.65), top: Math.round(size * 0.72), width: rayLength, height: rayWidth, rotate: 45 }
+    ];
+
+    return (
+      <div style={{ width: size, height: size, position: "relative", display: "flex" }}>
+        {rays.map((ray, index) => (
+          <div
+            key={index}
+            style={{
+              position: "absolute",
+              left: ray.left,
+              top: ray.top,
+              width: ray.width,
+              height: ray.height,
+              background: "#111",
+              transform: `rotate(${ray.rotate}deg)`,
+              transformOrigin: "center"
+            }}
+          />
+        ))}
+        <div
+          style={{
+            position: "absolute",
+            left: Math.round(size * 0.25),
+            top: Math.round(size * 0.25),
+            width: Math.round(size * 0.5),
+            height: Math.round(size * 0.5),
+            border: `${stroke}px solid #111`,
+            borderRadius: Math.round(size * 0.28),
+            background: "#fff",
+            display: "flex"
+          }}
+        >
+          <div
+            style={{
+              position: "absolute",
+              left: Math.round(size * 0.16),
+              top: Math.round(size * 0.18),
+              width: Math.round(size * 0.05),
+              height: Math.round(size * 0.05),
+              borderRadius: Math.round(size * 0.03),
+              background: "#111"
+            }}
+          />
+          <div
+            style={{
+              position: "absolute",
+              right: Math.round(size * 0.16),
+              top: Math.round(size * 0.18),
+              width: Math.round(size * 0.05),
+              height: Math.round(size * 0.05),
+              borderRadius: Math.round(size * 0.03),
+              background: "#111"
+            }}
+          />
+          <div
+            style={{
+              position: "absolute",
+              left: Math.round(size * 0.17),
+              top: Math.round(size * 0.29),
+              width: Math.round(size * 0.16),
+              height: Math.max(2, Math.round(size * 0.03)),
+              borderRadius: 6,
+              background: "#111"
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  const drops = [0.28, 0.48, 0.68];
+  const flakes = [0.26, 0.47, 0.68];
 
   return (
     <div
       style={{
         width: size,
         height: size,
-        border: "3px solid #111",
-        borderRadius: size / 2,
+        position: "relative",
         display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        fontSize: label.length > 1 ? Math.floor(size * 0.3) : Math.floor(size * 0.48),
-        fontWeight: 900,
-        lineHeight: 1
+        overflow: "hidden"
       }}
     >
-      {label}
+      <CloudShape size={size} top={kind === "fog" ? 2 : 4} />
+      {kind === "rain"
+        ? drops.map((left, index) => (
+            <div
+              key={index}
+              style={{
+                position: "absolute",
+                left: Math.round(size * left),
+                top: Math.round(size * 0.66),
+                width: Math.max(2, Math.round(size * 0.05)),
+                height: Math.round(size * 0.22),
+                background: "#111",
+                borderRadius: 3,
+                transform: "rotate(22deg)"
+              }}
+            />
+          ))
+        : null}
+      {kind === "snow"
+        ? flakes.map((left, index) => (
+            <div
+              key={index}
+              style={{
+                position: "absolute",
+                left: Math.round(size * left),
+                top: Math.round(size * 0.72),
+                width: Math.round(size * 0.11),
+                height: Math.round(size * 0.11),
+                border: `${Math.max(1, Math.round(stroke / 2))}px solid #111`,
+                borderRadius: Math.round(size * 0.06)
+              }}
+            />
+          ))
+        : null}
+      {kind === "storm" ? (
+        <div
+          style={{
+            position: "absolute",
+            left: Math.round(size * 0.43),
+            top: Math.round(size * 0.55),
+            width: Math.round(size * 0.13),
+            height: Math.round(size * 0.38),
+            display: "flex",
+            flexDirection: "column"
+          }}
+        >
+          <div
+            style={{
+              width: Math.round(size * 0.12),
+              height: Math.round(size * 0.2),
+              background: "#111",
+              transform: "skew(-18deg)"
+            }}
+          />
+          <div
+            style={{
+              width: Math.round(size * 0.12),
+              height: Math.round(size * 0.2),
+              marginTop: -2,
+              marginLeft: Math.round(size * 0.05),
+              background: "#111",
+              transform: "skew(-18deg)"
+            }}
+          />
+        </div>
+      ) : null}
+      {kind === "fog"
+        ? [0.57, 0.71, 0.85].map((top, index) => (
+            <div
+              key={index}
+              style={{
+                position: "absolute",
+                left: Math.round(size * (index === 2 ? 0.24 : 0.14)),
+                top: Math.round(size * top),
+                width: Math.round(size * (index === 1 ? 0.72 : 0.6)),
+                height: Math.max(2, Math.round(size * 0.05)),
+                background: "#111",
+                borderRadius: 6
+              }}
+            />
+          ))
+        : null}
     </div>
   );
 }
