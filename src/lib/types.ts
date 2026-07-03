@@ -33,4 +33,5 @@ export type DeviceStatus = {
   page: number;
   batteryPercent: number | null;
   batteryVoltage: number | null;
+  batteryChargeState: "charging" | "full" | "not_charging" | "unknown";
 };

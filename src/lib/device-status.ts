@@ -16,6 +16,13 @@ function safeText(value: string | null): string | null {
   return decoded.length > 0 ? decoded : null;
 }
 
+function parseChargeState(value: string | null): DeviceStatus["batteryChargeState"] {
+  if (value === "charging" || value === "full" || value === "not_charging") {
+    return value;
+  }
+  return "unknown";
+}
+
 export function parseDeviceStatus(searchParams: URLSearchParams): DeviceStatus {
   const wifi = searchParams.get("wifi");
   const batteryPercent = finiteNumber(searchParams.get("battery"));
@@ -29,7 +36,8 @@ export function parseDeviceStatus(searchParams: URLSearchParams): DeviceStatus {
     page: page === null ? 0 : clamp(Math.round(page), 0, 9),
     batteryPercent: batteryPercent === null ? null : clamp(Math.round(batteryPercent), 0, 100),
     batteryVoltage:
-      batteryVoltage === null ? null : Math.round(clamp(batteryVoltage, 0, 6) * 100) / 100
+      batteryVoltage === null ? null : Math.round(clamp(batteryVoltage, 0, 6) * 100) / 100,
+    batteryChargeState: parseChargeState(searchParams.get("charge"))
   };
 }
 
@@ -40,7 +48,8 @@ export function previewDeviceStatus(): DeviceStatus {
     rssi: -54,
     page: 0,
     batteryPercent: 82,
-    batteryVoltage: 4.03
+    batteryVoltage: 4.03,
+    batteryChargeState: "charging"
   };
 }
 
@@ -71,5 +80,18 @@ export function formatWifiStatus(status: DeviceStatus): string {
 export function formatBatteryStatus(status: DeviceStatus): string {
   const percent = status.batteryPercent === null ? "--%" : `${status.batteryPercent}%`;
   const voltage = status.batteryVoltage === null ? "" : ` ${status.batteryVoltage.toFixed(2)}V`;
-  return `BAT ${percent}${voltage}`;
+  const charge =
+    status.batteryChargeState === "charging"
+      ? " CHG"
+      : status.batteryChargeState === "full"
+        ? " FULL"
+        : "";
+  return `BAT ${percent}${voltage}${charge}`;
+}
+
+export function formatChargeStatus(status: DeviceStatus): string {
+  if (status.batteryChargeState === "charging") return "Charging";
+  if (status.batteryChargeState === "full") return "Full";
+  if (status.batteryChargeState === "not_charging") return "Not charging";
+  return "Unknown";
 }

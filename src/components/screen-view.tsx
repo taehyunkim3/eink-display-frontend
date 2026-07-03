@@ -1,5 +1,6 @@
 import {
   formatBatteryStatus,
+  formatChargeStatus,
   formatWifiStatus,
   wifiSignalBars,
   wifiSignalPercent
@@ -46,6 +47,7 @@ function DeviceDetails({ deviceStatus }: { deviceStatus: DeviceStatus }) {
     ["Wi-Fi", formatWifiStatus(deviceStatus)],
     ["RSSI", deviceStatus.rssi === null ? "-- dBm" : `${deviceStatus.rssi} dBm`],
     ["Battery", formatBatteryStatus(deviceStatus)],
+    ["Charge", formatChargeStatus(deviceStatus)],
     ["Page", `${deviceStatus.page + 1} / 2`]
   ];
 
