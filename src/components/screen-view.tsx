@@ -303,11 +303,19 @@ function PercentSparkline({ stock, width, height }: { stock: StockQuote; width: 
   const points = percentSparklinePoints(stock, Math.max(12, Math.floor(width / 2)), width, height, range);
   const pointText = points.map((point) => `${point.x},${point.y}`).join(" ");
   const endPoint = points[points.length - 1];
-  const lineWidth = Math.max(2, Math.round(height / 10));
+  const lineWidth = Math.max(2, Math.round(height / 18));
   const midY = Math.round(height / 2);
+  const upperY = Math.round(height / 4);
+  const lowerY = Math.round((height / 4) * 3);
+  const firstThirdX = Math.round(width / 3);
+  const secondThirdX = Math.round((width / 3) * 2);
   const imageSrc = svgDataUri(
     `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">` +
-      `<line x1="4" y1="${midY}" x2="${width - 4}" y2="${midY}" stroke="#111" stroke-width="1" stroke-dasharray="3 3"/>` +
+      `<line x1="4" y1="${upperY}" x2="${width - 4}" y2="${upperY}" stroke="#111" stroke-width="1" stroke-dasharray="2 4"/>` +
+      `<line x1="4" y1="${lowerY}" x2="${width - 4}" y2="${lowerY}" stroke="#111" stroke-width="1" stroke-dasharray="2 4"/>` +
+      `<line x1="${firstThirdX}" y1="3" x2="${firstThirdX}" y2="${height - 3}" stroke="#111" stroke-width="1" stroke-dasharray="2 5"/>` +
+      `<line x1="${secondThirdX}" y1="3" x2="${secondThirdX}" y2="${height - 3}" stroke="#111" stroke-width="1" stroke-dasharray="2 5"/>` +
+      `<line x1="4" y1="${midY}" x2="${width - 4}" y2="${midY}" stroke="#111" stroke-width="1" stroke-dasharray="4 3"/>` +
       `<polyline points="${pointText}" fill="none" stroke="#111" stroke-width="${lineWidth}" stroke-linecap="round" stroke-linejoin="round"/>` +
       `<circle cx="${endPoint.x}" cy="${endPoint.y}" r="${Math.max(2, lineWidth)}" fill="#111"/>` +
       `</svg>`
@@ -852,9 +860,8 @@ function MarketTile({
 }) {
   const change = formatSignedStockValue(stock, stock.change);
   const rate = formatSignedStockValue(stock, stock.changePercent, "%");
-  const graphHeight = 42;
+  const graphHeight = 55;
   const graphWidth = width - 12;
-  const graphRange = marketGraphPercentRange(stock);
 
   return (
     <div
@@ -909,26 +916,16 @@ function MarketTile({
         </div>
       </div>
       <PercentSparkline stock={stock} width={graphWidth} height={graphHeight} />
-      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 6 }}>
-        <div
-          style={{
-            display: "flex",
-            flexDirection: "column",
-            fontSize: 11,
-            lineHeight: 1.1
-          }}
-        >
-          <span>기준 ±{graphRange}%</span>
-          <span>점선 0%</span>
-        </div>
+      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "flex-end" }}>
         <div
           style={{
             textAlign: "right",
-            fontSize: 13,
+            fontSize: 12,
             display: "flex",
-            flexDirection: "column",
+            gap: 4,
             alignItems: "flex-end",
-            lineHeight: 1.1
+            justifyContent: "flex-end",
+            lineHeight: 1
           }}
         >
           <span>
@@ -959,11 +956,11 @@ function MarketScaleTile({ width, height }: { width: number; height: number }) {
       <div style={{ display: "flex", fontSize: 16 }}>그래프 기준</div>
       <div style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 13, lineHeight: 1.1 }}>
         <span>점선: 전일 종가 0%</span>
-        <span>상승/하락 폭은 % 기준</span>
-        <span>각 타일 변동폭에 맞춤</span>
+        <span>그래프: 1일 15분봉</span>
+        <span>이동평균선 없음</span>
       </div>
       <div style={{ display: "flex", justifyContent: "flex-end", fontSize: 18 }}>
-        개별 %
+        % 기준
       </div>
     </div>
   );

@@ -228,13 +228,15 @@ type YahooSnapshot = {
   history: number[];
 };
 
-async function getYahooSnapshot(
+async function getYahooChart(
   code: string,
-  options: FetchFreshOptions
-): Promise<YahooSnapshot> {
+  options: FetchFreshOptions,
+  range: string,
+  interval: string
+) {
   const url = new URL(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(code)}`);
-  url.searchParams.set("range", "5d");
-  url.searchParams.set("interval", "1d");
+  url.searchParams.set("range", range);
+  url.searchParams.set("interval", interval);
 
   const response = await fetch(
     url,
@@ -245,16 +247,32 @@ async function getYahooSnapshot(
     throw new Error(`Market request failed: ${code} ${response.status}`);
   }
 
-  const data = (await response.json()) as YahooChartResponse;
-  const result = data.chart?.result?.[0];
+  return (await response.json()) as YahooChartResponse;
+}
+
+async function getYahooSnapshot(
+  code: string,
+  options: FetchFreshOptions
+): Promise<YahooSnapshot> {
+  let data = await getYahooChart(code, options, "1d", "15m");
+  let result = data.chart?.result?.[0];
   const closes = (result?.indicators?.quote?.[0]?.close ?? []).filter(
     (value): value is number => typeof value === "number"
   );
-  const latestClose = latestNumber(closes);
-  const previousSeriesClose = closes.length >= 2 ? closes[closes.length - 2] : undefined;
+
+  if (closes.length < 2) {
+    data = await getYahooChart(code, options, "5d", "1d");
+    result = data.chart?.result?.[0];
+  }
+
+  const history = (result?.indicators?.quote?.[0]?.close ?? []).filter(
+    (value): value is number => typeof value === "number"
+  );
+  const latestClose = latestNumber(history);
+  const previousSeriesClose = history.length >= 2 ? history[history.length - 2] : undefined;
   const price = result?.meta?.regularMarketPrice ?? latestClose;
   const previousClose =
-    previousSeriesClose ?? result?.meta?.previousClose ?? result?.meta?.chartPreviousClose;
+    result?.meta?.previousClose ?? result?.meta?.chartPreviousClose ?? previousSeriesClose;
 
   return {
     price,
@@ -263,7 +281,7 @@ async function getYahooSnapshot(
     tradedAt: result?.meta?.regularMarketTime
       ? new Date(result.meta.regularMarketTime * 1000).toISOString()
       : null,
-    history: closes
+    history
   };
 }
 
