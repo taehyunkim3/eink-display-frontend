@@ -8,7 +8,7 @@ import {
 import { getDashboardData } from "@/lib/dashboard";
 import { previewDeviceStatus } from "@/lib/device-status";
 import { formatGeneratedAt } from "@/lib/format";
-import { ScreenView } from "@/components/screen-view";
+import { PreviewScreen } from "@/components/preview-screen";
 
 export const dynamic = "force-dynamic";
 
@@ -83,9 +83,7 @@ export default async function PreviewPage() {
           </p>
         </header>
 
-        <section className="eink-frame" aria-label="800 x 480 device preview">
-          <ScreenView data={data} deviceStatus={deviceStatus} />
-        </section>
+        <PreviewScreen data={data} deviceStatus={deviceStatus} />
 
         <section className="grid gap-3 text-sm md:grid-cols-2">
           <div className="border-2 border-neutral-900 bg-white p-4">

@@ -22,8 +22,15 @@ type ScreenViewProps = {
 };
 
 const DEFAULT_PHOTO_SRC = "/images/home-dog.png";
-const PAGE_TITLES = ["요약", "주간날씨", "캘린더", "국내주식", "기기상태", "사진"] as const;
-const PAGE_COUNT = PAGE_TITLES.length;
+export const SCREEN_PAGE_TITLES = [
+  "요약",
+  "주간날씨",
+  "캘린더",
+  "국내주식",
+  "기기상태",
+  "사진"
+] as const;
+export const SCREEN_PAGE_COUNT = SCREEN_PAGE_TITLES.length;
 
 const KOREAN_DAY = new Intl.DateTimeFormat("ko-KR", {
   month: "short",
@@ -33,7 +40,7 @@ const KOREAN_DAY = new Intl.DateTimeFormat("ko-KR", {
 });
 
 function normalizePage(page: number) {
-  return ((page % PAGE_COUNT) + PAGE_COUNT) % PAGE_COUNT;
+  return ((page % SCREEN_PAGE_COUNT) + SCREEN_PAGE_COUNT) % SCREEN_PAGE_COUNT;
 }
 
 function formatForecastDate(value: string): string {
@@ -439,7 +446,7 @@ function DeviceDetails({
     ["RSSI", deviceStatus.rssi === null ? "-- dBm" : `${deviceStatus.rssi} dBm`],
     ["Battery", formatBatteryStatus(deviceStatus)],
     ["Charge", formatChargeStatus(deviceStatus)],
-    ["Page", `${page + 1} / ${PAGE_COUNT}`]
+    ["Page", `${page + 1} / ${SCREEN_PAGE_COUNT}`]
   ];
 
   return (
@@ -557,10 +564,10 @@ export function ScreenView({ data, deviceStatus, photoSrc = DEFAULT_PHOTO_SRC }:
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
           <span>ESP32 E-INK</span>
           <span style={{ fontWeight: 700 }}>|</span>
-          <span>{PAGE_TITLES[page]}</span>
+          <span>{SCREEN_PAGE_TITLES[page]}</span>
           <span style={{ fontWeight: 700 }}>|</span>
           <span>
-            {page + 1}/{PAGE_COUNT}
+            {page + 1}/{SCREEN_PAGE_COUNT}
           </span>
           <span style={{ fontWeight: 700 }}>|</span>
           <span>{formatGeneratedAt(data.generatedAt)}</span>
