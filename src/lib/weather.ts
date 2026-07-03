@@ -40,7 +40,11 @@ function numberEnv(name: string, fallback: number): number {
   return Number.isFinite(value) ? value : fallback;
 }
 
-export async function getWeather(): Promise<WeatherSnapshot> {
+type FetchFreshOptions = {
+  forceRefresh?: boolean;
+};
+
+export async function getWeather(options: FetchFreshOptions = {}): Promise<WeatherSnapshot> {
   const latitude = numberEnv("WEATHER_LATITUDE", 37.5665);
   const longitude = numberEnv("WEATHER_LONGITUDE", 126.978);
   const timezone = process.env.WEATHER_TIMEZONE ?? "Asia/Seoul";
@@ -55,9 +59,10 @@ export async function getWeather(): Promise<WeatherSnapshot> {
   );
   url.searchParams.set("timezone", timezone);
 
-  const response = await fetch(url, {
-    next: { revalidate: 600 }
-  });
+  const response = await fetch(
+    url,
+    options.forceRefresh ? { cache: "no-store" } : { next: { revalidate: 600 } }
+  );
 
   if (!response.ok) {
     throw new Error(`Weather request failed: ${response.status}`);

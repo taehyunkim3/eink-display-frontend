@@ -8,7 +8,9 @@ export async function GET(request: NextRequest) {
   const authError = assertDeviceAuth(request);
   if (authError) return authError;
 
-  return Response.json(await getDashboardData(), {
+  const forceRefresh = request.nextUrl.searchParams.get("force") === "1";
+
+  return Response.json(await getDashboardData({ forceRefresh }), {
     headers: {
       "Cache-Control": "private, no-store"
     }

@@ -118,16 +118,21 @@ function parseIcs(text: string): CalendarEvent[] {
     .slice(0, 8);
 }
 
-export async function getCalendarEvents(): Promise<CalendarEvent[]> {
+type FetchFreshOptions = {
+  forceRefresh?: boolean;
+};
+
+export async function getCalendarEvents(options: FetchFreshOptions = {}): Promise<CalendarEvent[]> {
   const icalUrl = process.env.GOOGLE_CALENDAR_ICAL_URL;
 
   if (!icalUrl) {
     return [];
   }
 
-  const response = await fetch(icalUrl, {
-    next: { revalidate: 300 }
-  });
+  const response = await fetch(
+    icalUrl,
+    options.forceRefresh ? { cache: "no-store" } : { next: { revalidate: 300 } }
+  );
 
   if (!response.ok) {
     throw new Error(`Calendar request failed: ${response.status}`);

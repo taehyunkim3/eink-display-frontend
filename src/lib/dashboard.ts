@@ -20,11 +20,15 @@ function refreshSeconds(): number {
   return Number.isFinite(value) && value >= 60 ? Math.floor(value) : 1800;
 }
 
-export async function getDashboardData(): Promise<DashboardData> {
+type DashboardOptions = {
+  forceRefresh?: boolean;
+};
+
+export async function getDashboardData(options: DashboardOptions = {}): Promise<DashboardData> {
   const notices: string[] = [];
   const [weatherResult, calendarResult] = await Promise.allSettled([
-    getWeather(),
-    getCalendarEvents()
+    getWeather(options),
+    getCalendarEvents(options)
   ]);
 
   const weather =

@@ -12,7 +12,8 @@ export async function GET(request: NextRequest) {
   const authError = assertDeviceAuth(request);
   if (authError) return authError;
 
-  const data = await getDashboardData();
+  const forceRefresh = request.nextUrl.searchParams.get("force") === "1";
+  const data = await getDashboardData({ forceRefresh });
   const deviceStatus = parseDeviceStatus(request.nextUrl.searchParams);
 
   return new ImageResponse(
