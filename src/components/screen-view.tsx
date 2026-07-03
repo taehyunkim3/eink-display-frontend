@@ -145,6 +145,10 @@ function dateKey(date: Date): string {
   return `${year}-${month}-${day}`;
 }
 
+function koreaDateKey(value: Date | string): string {
+  return KOREAN_DATE_PARTS.format(value instanceof Date ? value : new Date(value));
+}
+
 function calendarDayLabel(date: Date): string {
   if (date.getDate() === 1) return `${date.getMonth() + 1}월 1일`;
   return String(date.getDate());
@@ -215,6 +219,22 @@ function chunkArray<T>(items: T[], size: number): T[][] {
     chunks.push(items.slice(index, index + size));
   }
   return chunks;
+}
+
+function TodayCellBorder() {
+  return (
+    <div
+      style={{
+        position: "absolute",
+        top: 1,
+        right: 1,
+        bottom: 1,
+        left: 1,
+        border: "3px solid #111",
+        boxSizing: "border-box"
+      }}
+    />
+  );
 }
 
 function weatherIconKind(code: number | null): "sun" | "cloud" | "rain" | "snow" | "storm" | "fog" {
@@ -771,6 +791,7 @@ function CalendarPanel({ data }: { data: DashboardData }) {
   const weekdayHeight = 18;
   const dayCellWidth = contentWidth / 7;
   const dayCellHeight = (SCREEN_HEIGHT - 6 - 36 - weekdayHeight) / 6;
+  const todayKey = koreaDateKey(data.generatedAt);
   const eventsByDate = data.events.reduce<Record<string, CalendarEvent[]>>((acc, event) => {
     const key = eventDateKey(event);
     acc[key] = [...(acc[key] ?? []), event];
@@ -822,11 +843,13 @@ function CalendarPanel({ data }: { data: DashboardData }) {
               const muted = cell.getMonth() !== currentMonth;
               const borderStyle = muted ? "dashed" : "solid";
               const isFirstDayOfMonth = cell.getDate() === 1;
+              const isToday = koreaDateKey(cell) === todayKey;
 
               return (
                 <div
                   key={key}
                   style={{
+                    position: "relative",
                     width: dayCellWidth,
                     height: dayCellHeight,
                     borderTop: weekIndex === 0 ? `1px ${borderStyle} #111` : "0px solid transparent",
@@ -893,6 +916,7 @@ function CalendarPanel({ data }: { data: DashboardData }) {
                   {dayEvents.length > 2 ? (
                     <div style={{ display: "flex", fontSize: 10, fontWeight: 900 }}>{`+${dayEvents.length - 2}`}</div>
                   ) : null}
+                  {isToday ? <TodayCellBorder /> : null}
                 </div>
               );
             })}
@@ -909,6 +933,7 @@ function WeekCalendarPanel({ data }: { data: DashboardData }) {
   const contentHeight = SCREEN_HEIGHT - 6 - 36;
   const dayCellWidth = contentWidth / 7;
   const dayCellHeight = contentHeight;
+  const todayKey = koreaDateKey(data.generatedAt);
 
   return (
     <section
@@ -930,11 +955,13 @@ function WeekCalendarPanel({ data }: { data: DashboardData }) {
       >
         {days.map((day, dayIndex) => {
           const dayEvents = eventsForDay(data.events, day);
+          const isToday = koreaDateKey(day) === todayKey;
 
           return (
             <div
               key={dateKey(day)}
               style={{
+                position: "relative",
                 width: dayCellWidth,
                 height: dayCellHeight,
                 boxSizing: "border-box",
@@ -1038,6 +1065,7 @@ function WeekCalendarPanel({ data }: { data: DashboardData }) {
                   <div style={{ display: "flex", fontSize: 11 }}>{`+${dayEvents.length - 7}`}</div>
                 ) : null}
               </div>
+              {isToday ? <TodayCellBorder /> : null}
             </div>
           );
         })}
