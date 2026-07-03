@@ -469,9 +469,9 @@ function CalendarPanel({ data }: { data: DashboardData }) {
   const cells = monthCells(data.generatedAt);
   const weeks = chunkArray(cells, 7);
   const currentMonth = baseDate.getMonth();
-  const contentWidth = SCREEN_WIDTH - 52;
-  const dayCellWidth = 103;
-  const dayCellHeight = 60;
+  const contentWidth = 777;
+  const dayCellWidth = 111;
+  const dayCellHeight = 68;
   const eventsByDate = data.events.reduce<Record<string, CalendarEvent[]>>((acc, event) => {
     const key = eventDateKey(event);
     acc[key] = [...(acc[key] ?? []), event];
@@ -484,7 +484,7 @@ function CalendarPanel({ data }: { data: DashboardData }) {
         flex: 1,
         minWidth: 0,
         boxSizing: "border-box",
-        padding: "12px 24px",
+        padding: "6px 8px",
         display: "flex",
         flexDirection: "column"
       }}
@@ -493,12 +493,12 @@ function CalendarPanel({ data }: { data: DashboardData }) {
         style={{
           display: "flex",
           flexDirection: "column",
-          gap: 3,
+          gap: 0,
           width: contentWidth,
-          height: 410
+          height: 424
         }}
       >
-        <div style={{ display: "flex", gap: 4, height: 18 }}>
+        <div style={{ display: "flex", gap: 0, height: 16 }}>
           {WEEKDAY_LABELS.map((label) => (
             <div
               key={label}
@@ -516,11 +516,12 @@ function CalendarPanel({ data }: { data: DashboardData }) {
           ))}
         </div>
         {weeks.map((week, weekIndex) => (
-          <div key={weekIndex} style={{ display: "flex", gap: 4, height: dayCellHeight }}>
-            {week.map((cell) => {
+          <div key={weekIndex} style={{ display: "flex", gap: 0, height: dayCellHeight }}>
+            {week.map((cell, dayIndex) => {
               const key = dateKey(cell);
               const dayEvents = eventsByDate[key] ?? [];
               const muted = cell.getMonth() !== currentMonth;
+              const borderColor = muted ? "#999" : "#111";
 
               return (
                 <div
@@ -528,7 +529,11 @@ function CalendarPanel({ data }: { data: DashboardData }) {
                   style={{
                     width: dayCellWidth,
                     height: dayCellHeight,
-                    border: muted ? "1px solid #777" : "2px solid #111",
+                    borderTop: weekIndex === 0 ? `1px solid ${borderColor}` : "0px solid transparent",
+                    borderLeft: dayIndex === 0 ? `1px solid ${borderColor}` : "0px solid transparent",
+                    borderRight: `1px solid ${borderColor}`,
+                    borderBottom: `1px solid ${borderColor}`,
+                    boxSizing: "border-box",
                     padding: "4px 5px",
                     display: "flex",
                     flexDirection: "column",
