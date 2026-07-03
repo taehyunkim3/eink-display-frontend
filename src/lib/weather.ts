@@ -11,6 +11,13 @@ type OpenMeteoCurrent = {
 
 type OpenMeteoResponse = {
   current?: OpenMeteoCurrent;
+  daily?: {
+    time?: string[];
+    weather_code?: Array<number | null>;
+    temperature_2m_max?: Array<number | null>;
+    temperature_2m_min?: Array<number | null>;
+    precipitation_probability_max?: Array<number | null>;
+  };
 };
 
 const WEATHER_CODE_LABELS: Record<number, string> = {
@@ -57,6 +64,11 @@ export async function getWeather(options: FetchFreshOptions = {}): Promise<Weath
     "current",
     "temperature_2m,relative_humidity_2m,apparent_temperature,weather_code,wind_speed_10m"
   );
+  url.searchParams.set(
+    "daily",
+    "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max"
+  );
+  url.searchParams.set("forecast_days", "7");
   url.searchParams.set("timezone", timezone);
 
   const response = await fetch(
@@ -71,6 +83,8 @@ export async function getWeather(options: FetchFreshOptions = {}): Promise<Weath
   const data = (await response.json()) as OpenMeteoResponse;
   const current = data.current ?? {};
   const weatherCode = current.weather_code ?? null;
+  const daily = data.daily ?? {};
+  const dates = daily.time ?? [];
 
   return {
     label,
@@ -81,6 +95,20 @@ export async function getWeather(options: FetchFreshOptions = {}): Promise<Weath
     weatherCode,
     condition:
       weatherCode === null ? "날씨 정보 없음" : WEATHER_CODE_LABELS[weatherCode] ?? "날씨 확인",
-    updatedAt: current.time ? new Date(current.time).toISOString() : new Date().toISOString()
+    updatedAt: current.time ? new Date(current.time).toISOString() : new Date().toISOString(),
+    daily: dates.slice(0, 7).map((date, index) => {
+      const dailyWeatherCode = daily.weather_code?.[index] ?? null;
+      return {
+        date,
+        minTemperatureC: daily.temperature_2m_min?.[index] ?? null,
+        maxTemperatureC: daily.temperature_2m_max?.[index] ?? null,
+        precipitationProbabilityPercent: daily.precipitation_probability_max?.[index] ?? null,
+        weatherCode: dailyWeatherCode,
+        condition:
+          dailyWeatherCode === null
+            ? "날씨 정보 없음"
+            : WEATHER_CODE_LABELS[dailyWeatherCode] ?? "날씨 확인"
+      };
+    })
   };
 }

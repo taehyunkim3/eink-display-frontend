@@ -1,3 +1,12 @@
+export type DailyForecast = {
+  date: string;
+  minTemperatureC: number | null;
+  maxTemperatureC: number | null;
+  precipitationProbabilityPercent: number | null;
+  weatherCode: number | null;
+  condition: string;
+};
+
 export type WeatherSnapshot = {
   label: string;
   temperatureC: number | null;
@@ -7,6 +16,7 @@ export type WeatherSnapshot = {
   weatherCode: number | null;
   condition: string;
   updatedAt: string;
+  daily: DailyForecast[];
 };
 
 export type CalendarEvent = {
@@ -18,11 +28,23 @@ export type CalendarEvent = {
   allDay: boolean;
 };
 
+export type StockQuote = {
+  code: string;
+  name: string;
+  market: string | null;
+  price: string | null;
+  change: string | null;
+  changePercent: string | null;
+  direction: "up" | "down" | "flat" | "unknown";
+  tradedAt: string | null;
+};
+
 export type DashboardData = {
   generatedAt: string;
   refreshSeconds: number;
   weather: WeatherSnapshot;
   events: CalendarEvent[];
+  stocks: StockQuote[];
   notices: string[];
 };
 

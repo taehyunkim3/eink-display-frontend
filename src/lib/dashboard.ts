@@ -1,4 +1,5 @@
 import { getCalendarEvents } from "./calendar";
+import { getStockQuotes } from "./stocks";
 import { getWeather } from "./weather";
 import type { DashboardData, WeatherSnapshot } from "./types";
 
@@ -11,7 +12,8 @@ function fallbackWeather(message: string): WeatherSnapshot {
     windKph: null,
     weatherCode: null,
     condition: message,
-    updatedAt: new Date().toISOString()
+    updatedAt: new Date().toISOString(),
+    daily: []
   };
 }
 
@@ -26,9 +28,10 @@ type DashboardOptions = {
 
 export async function getDashboardData(options: DashboardOptions = {}): Promise<DashboardData> {
   const notices: string[] = [];
-  const [weatherResult, calendarResult] = await Promise.allSettled([
+  const [weatherResult, calendarResult, stockResult] = await Promise.allSettled([
     getWeather(options),
-    getCalendarEvents(options)
+    getCalendarEvents(options),
+    getStockQuotes(options)
   ]);
 
   const weather =
@@ -52,11 +55,18 @@ export async function getDashboardData(options: DashboardOptions = {}): Promise<
     notices.push("GOOGLE_CALENDAR_ICAL_URL 미설정");
   }
 
+  const stocks = stockResult.status === "fulfilled" ? stockResult.value : [];
+
+  if (stockResult.status === "rejected") {
+    notices.push(stockResult.reason instanceof Error ? stockResult.reason.message : "Stock failed");
+  }
+
   return {
     generatedAt: new Date().toISOString(),
     refreshSeconds: refreshSeconds(),
     weather,
     events,
+    stocks,
     notices
   };
 }
