@@ -526,7 +526,8 @@ function PhotoPanel({ photoSrc }: { photoSrc: string }) {
           display: "flex",
           flex: 1,
           minHeight: 0,
-          overflow: "hidden"
+          overflow: "hidden",
+          background: "#fff"
         }}
       >
         {/* eslint-disable-next-line @next/next/no-img-element -- next/image is not supported inside next/og ImageResponse. */}
@@ -538,7 +539,7 @@ function PhotoPanel({ photoSrc }: { photoSrc: string }) {
           style={{
             width: "100%",
             height: "100%",
-            objectFit: "cover"
+            objectFit: "contain"
           }}
         />
       </div>
