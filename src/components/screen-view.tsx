@@ -136,171 +136,22 @@ function weatherIconKind(code: number | null): "sun" | "cloud" | "rain" | "snow"
   return "cloud";
 }
 
-function CloudShape({ size, top = 6 }: { size: number; top?: number }) {
-  const stroke = Math.max(2, Math.round(size / 18));
-
-  return (
-    <div
-      style={{
-        position: "absolute",
-        left: Math.round(size * 0.11),
-        top,
-        width: Math.round(size * 0.78),
-        height: Math.round(size * 0.55),
-        display: "flex"
-      }}
-    >
-      <div
-        style={{
-          position: "absolute",
-          left: Math.round(size * 0.1),
-          top: Math.round(size * 0.25),
-          width: Math.round(size * 0.62),
-          height: Math.round(size * 0.26),
-          border: `${stroke}px solid #111`,
-          borderRadius: Math.round(size * 0.16),
-          background: "#fff"
-        }}
-      />
-      <div
-        style={{
-          position: "absolute",
-          left: Math.round(size * 0.18),
-          top: Math.round(size * 0.1),
-          width: Math.round(size * 0.27),
-          height: Math.round(size * 0.27),
-          border: `${stroke}px solid #111`,
-          borderRadius: Math.round(size * 0.15),
-          background: "#fff"
-        }}
-      />
-      <div
-        style={{
-          position: "absolute",
-          left: Math.round(size * 0.38),
-          top: Math.round(size * 0.02),
-          width: Math.round(size * 0.34),
-          height: Math.round(size * 0.34),
-          border: `${stroke}px solid #111`,
-          borderRadius: Math.round(size * 0.18),
-          background: "#fff"
-        }}
-      />
-      <div
-        style={{
-          position: "absolute",
-          left: Math.round(size * 0.31),
-          top: Math.round(size * 0.37),
-          width: Math.round(size * 0.05),
-          height: Math.round(size * 0.05),
-          borderRadius: Math.round(size * 0.03),
-          background: "#111"
-        }}
-      />
-      <div
-        style={{
-          position: "absolute",
-          left: Math.round(size * 0.53),
-          top: Math.round(size * 0.37),
-          width: Math.round(size * 0.05),
-          height: Math.round(size * 0.05),
-          borderRadius: Math.round(size * 0.03),
-          background: "#111"
-        }}
-      />
-    </div>
-  );
-}
+const WEATHER_ICON_PATHS: Record<ReturnType<typeof weatherIconKind>, string> = {
+  sun: "M8 11a3 3 0 1 1 0-6 3 3 0 0 1 0 6m0 1a4 4 0 1 0 0-8 4 4 0 0 0 0 8M8 0a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 0m0 13a.5.5 0 0 1 .5.5v2a.5.5 0 0 1-1 0v-2A.5.5 0 0 1 8 13m8-5a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2a.5.5 0 0 1 .5.5M3 8a.5.5 0 0 1-.5.5h-2a.5.5 0 0 1 0-1h2A.5.5 0 0 1 3 8m10.657-5.657a.5.5 0 0 1 0 .707l-1.414 1.415a.5.5 0 1 1-.707-.708l1.414-1.414a.5.5 0 0 1 .707 0m-9.193 9.193a.5.5 0 0 1 0 .707L3.05 13.657a.5.5 0 0 1-.707-.707l1.414-1.414a.5.5 0 0 1 .707 0m9.193 2.121a.5.5 0 0 1-.707 0l-1.414-1.414a.5.5 0 0 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .707M4.464 4.465a.5.5 0 0 1-.707 0L2.343 3.05a.5.5 0 1 1 .707-.707l1.414 1.414a.5.5 0 0 1 0 .708",
+  cloud: "M4.406 3.342A5.53 5.53 0 0 1 8 2c2.69 0 4.923 2 5.166 4.579C14.758 6.804 16 8.137 16 9.773 16 11.569 14.502 13 12.687 13H3.781C1.708 13 0 11.366 0 9.318c0-1.763 1.266-3.223 2.942-3.593.143-.863.698-1.723 1.464-2.383m.653.757c-.757.653-1.153 1.44-1.153 2.056v.448l-.445.049C2.064 6.805 1 7.952 1 9.318 1 10.785 2.23 12 3.781 12h8.906C13.98 12 15 10.988 15 9.773c0-1.216-1.02-2.228-2.313-2.228h-.5v-.5C12.188 4.825 10.328 3 8 3a4.53 4.53 0 0 0-2.941 1.1z",
+  rain: "M4.158 12.025a.5.5 0 0 1 .316.633l-.5 1.5a.5.5 0 0 1-.948-.316l.5-1.5a.5.5 0 0 1 .632-.317m3 0a.5.5 0 0 1 .316.633l-1 3a.5.5 0 0 1-.948-.316l1-3a.5.5 0 0 1 .632-.317m3 0a.5.5 0 0 1 .316.633l-.5 1.5a.5.5 0 0 1-.948-.316l.5-1.5a.5.5 0 0 1 .632-.317m3 0a.5.5 0 0 1 .316.633l-1 3a.5.5 0 1 1-.948-.316l1-3a.5.5 0 0 1 .632-.317m.247-6.998a5.001 5.001 0 0 0-9.499-1.004A3.5 3.5 0 1 0 3.5 11H13a3 3 0 0 0 .405-5.973M8.5 2a4 4 0 0 1 3.976 3.555.5.5 0 0 0 .5.445H13a2 2 0 0 1 0 4H3.5a2.5 2.5 0 1 1 .605-4.926.5.5 0 0 0 .596-.329A4 4 0 0 1 8.5 2",
+  snow: "M13.405 4.277a5.001 5.001 0 0 0-9.499-1.004A3.5 3.5 0 1 0 3.5 10.25H13a3 3 0 0 0 .405-5.973M8.5 1.25a4 4 0 0 1 3.976 3.555.5.5 0 0 0 .5.445H13a2 2 0 0 1-.001 4H3.5a2.5 2.5 0 1 1 .605-4.926.5.5 0 0 0 .596-.329A4 4 0 0 1 8.5 1.25M2.625 11.5a.25.25 0 0 1 .25.25v.57l.501-.287a.25.25 0 0 1 .248.434l-.495.283.495.283a.25.25 0 0 1-.248.434l-.501-.286v.569a.25.25 0 1 1-.5 0v-.57l-.501.287a.25.25 0 0 1-.248-.434l.495-.283-.495-.283a.25.25 0 0 1 .248-.434l.501.286v-.569a.25.25 0 0 1 .25-.25m2.75 2a.25.25 0 0 1 .25.25v.57l.501-.287a.25.25 0 0 1 .248.434l-.495.283.495.283a.25.25 0 0 1-.248.434l-.501-.286v.569a.25.25 0 1 1-.5 0v-.57l-.501.287a.25.25 0 0 1-.248-.434l.495-.283-.495-.283a.25.25 0 0 1 .248-.434l.501.286v-.569a.25.25 0 0 1 .25-.25m5.5 0a.25.25 0 0 1 .25.25v.57l.501-.287a.25.25 0 0 1 .248.434l-.495.283.495.283a.25.25 0 0 1-.248.434l-.501-.286v.569a.25.25 0 1 1-.5 0v-.57l-.501.287a.25.25 0 0 1-.248-.434l.495-.283-.495-.283a.25.25 0 0 1 .248-.434l.501.286v-.569a.25.25 0 0 1 .25-.25m-2.75-2a.25.25 0 0 1 .25.25v.57l.501-.287a.25.25 0 0 1 .248.434l-.495.283.495.283a.25.25 0 0 1-.248.434l-.501-.286v.569a.25.25 0 1 1-.5 0v-.57l-.501.287a.25.25 0 0 1-.248-.434l.495-.283-.495-.283a.25.25 0 0 1 .248-.434l.501.286v-.569a.25.25 0 0 1 .25-.25m5.5 0a.25.25 0 0 1 .25.25v.57l.501-.287a.25.25 0 0 1 .248.434l-.495.283.495.283a.25.25 0 0 1-.248.434l-.501-.286v.569a.25.25 0 1 1-.5 0v-.57l-.501.287a.25.25 0 0 1-.248-.434l.495-.283-.495-.283a.25.25 0 0 1 .248-.434l.501.286v-.569a.25.25 0 0 1 .25-.25",
+  storm: "M2.658 11.026a.5.5 0 0 1 .316.632l-.5 1.5a.5.5 0 1 1-.948-.316l.5-1.5a.5.5 0 0 1 .632-.316m9.5 0a.5.5 0 0 1 .316.632l-.5 1.5a.5.5 0 1 1-.948-.316l.5-1.5a.5.5 0 0 1 .632-.316m-7.5 1.5a.5.5 0 0 1 .316.632l-.5 1.5a.5.5 0 1 1-.948-.316l.5-1.5a.5.5 0 0 1 .632-.316m9.5 0a.5.5 0 0 1 .316.632l-.5 1.5a.5.5 0 1 1-.948-.316l.5-1.5a.5.5 0 0 1 .632-.316m-.753-8.499a5.001 5.001 0 0 0-9.499-1.004A3.5 3.5 0 1 0 3.5 10H13a3 3 0 0 0 .405-5.973M8.5 1a4 4 0 0 1 3.976 3.555.5.5 0 0 0 .5.445H13a2 2 0 0 1 0 4H3.5a2.5 2.5 0 1 1 .605-4.926.5.5 0 0 0 .596-.329A4 4 0 0 1 8.5 1M7.053 11.276A.5.5 0 0 1 7.5 11h1a.5.5 0 0 1 .474.658l-.28.842H9.5a.5.5 0 0 1 .39.812l-2 2.5a.5.5 0 0 1-.875-.433L7.36 14H6.5a.5.5 0 0 1-.447-.724z",
+  fog: "M3 13.5a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5m0 2a.5.5 0 0 1 .5-.5h9a.5.5 0 0 1 0 1h-9a.5.5 0 0 1-.5-.5m10.405-9.473a5.001 5.001 0 0 0-9.499-1.004A3.5 3.5 0 1 0 3.5 12H13a3 3 0 0 0 .405-5.973M8.5 3a4 4 0 0 1 3.976 3.555.5.5 0 0 0 .5.445H13a2 2 0 0 1 0 4H3.5a2.5 2.5 0 1 1 .605-4.926.5.5 0 0 0 .596-.329A4 4 0 0 1 8.5 3"
+};
 
 function WeatherIcon({ code, size = 58 }: { code: number | null; size?: number }) {
   const kind = weatherIconKind(code);
-  const stroke = Math.max(2, Math.round(size / 18));
-  const rayLength = Math.round(size * 0.16);
-  const rayWidth = Math.max(2, Math.round(size / 20));
-  const center = Math.round(size / 2);
-
-  if (kind === "sun") {
-    const rays = [
-      { left: center - rayWidth / 2, top: 2, width: rayWidth, height: rayLength, rotate: 0 },
-      { left: center - rayWidth / 2, top: size - rayLength - 2, width: rayWidth, height: rayLength, rotate: 0 },
-      { left: 2, top: center - rayWidth / 2, width: rayLength, height: rayWidth, rotate: 0 },
-      { left: size - rayLength - 2, top: center - rayWidth / 2, width: rayLength, height: rayWidth, rotate: 0 },
-      { left: Math.round(size * 0.14), top: Math.round(size * 0.14), width: rayLength, height: rayWidth, rotate: 45 },
-      { left: Math.round(size * 0.65), top: Math.round(size * 0.14), width: rayLength, height: rayWidth, rotate: -45 },
-      { left: Math.round(size * 0.14), top: Math.round(size * 0.72), width: rayLength, height: rayWidth, rotate: -45 },
-      { left: Math.round(size * 0.65), top: Math.round(size * 0.72), width: rayLength, height: rayWidth, rotate: 45 }
-    ];
-
-    return (
-      <div style={{ width: size, height: size, position: "relative", display: "flex" }}>
-        {rays.map((ray, index) => (
-          <div
-            key={index}
-            style={{
-              position: "absolute",
-              left: ray.left,
-              top: ray.top,
-              width: ray.width,
-              height: ray.height,
-              background: "#111",
-              transform: `rotate(${ray.rotate}deg)`,
-              transformOrigin: "center"
-            }}
-          />
-        ))}
-        <div
-          style={{
-            position: "absolute",
-            left: Math.round(size * 0.25),
-            top: Math.round(size * 0.25),
-            width: Math.round(size * 0.5),
-            height: Math.round(size * 0.5),
-            border: `${stroke}px solid #111`,
-            borderRadius: Math.round(size * 0.28),
-            background: "#fff",
-            display: "flex"
-          }}
-        >
-          <div
-            style={{
-              position: "absolute",
-              left: Math.round(size * 0.16),
-              top: Math.round(size * 0.18),
-              width: Math.round(size * 0.05),
-              height: Math.round(size * 0.05),
-              borderRadius: Math.round(size * 0.03),
-              background: "#111"
-            }}
-          />
-          <div
-            style={{
-              position: "absolute",
-              right: Math.round(size * 0.16),
-              top: Math.round(size * 0.18),
-              width: Math.round(size * 0.05),
-              height: Math.round(size * 0.05),
-              borderRadius: Math.round(size * 0.03),
-              background: "#111"
-            }}
-          />
-          <div
-            style={{
-              position: "absolute",
-              left: Math.round(size * 0.17),
-              top: Math.round(size * 0.29),
-              width: Math.round(size * 0.16),
-              height: Math.max(2, Math.round(size * 0.03)),
-              borderRadius: 6,
-              background: "#111"
-            }}
-          />
-        </div>
-      </div>
-    );
-  }
-
-  const drops = [0.28, 0.48, 0.68];
-  const flakes = [0.26, 0.47, 0.68];
+  const imageSrc = svgDataUri(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" fill="#111" viewBox="0 0 16 16">` +
+      `<path d="${WEATHER_ICON_PATHS[kind]}"/>` +
+      `</svg>`
+  );
 
   return (
     <div
@@ -312,88 +163,8 @@ function WeatherIcon({ code, size = 58 }: { code: number | null; size?: number }
         overflow: "hidden"
       }}
     >
-      <CloudShape size={size} top={kind === "fog" ? 2 : 4} />
-      {kind === "rain"
-        ? drops.map((left, index) => (
-            <div
-              key={index}
-              style={{
-                position: "absolute",
-                left: Math.round(size * left),
-                top: Math.round(size * 0.66),
-                width: Math.max(2, Math.round(size * 0.05)),
-                height: Math.round(size * 0.22),
-                background: "#111",
-                borderRadius: 3,
-                transform: "rotate(22deg)"
-              }}
-            />
-          ))
-        : null}
-      {kind === "snow"
-        ? flakes.map((left, index) => (
-            <div
-              key={index}
-              style={{
-                position: "absolute",
-                left: Math.round(size * left),
-                top: Math.round(size * 0.72),
-                width: Math.round(size * 0.11),
-                height: Math.round(size * 0.11),
-                border: `${Math.max(1, Math.round(stroke / 2))}px solid #111`,
-                borderRadius: Math.round(size * 0.06)
-              }}
-            />
-          ))
-        : null}
-      {kind === "storm" ? (
-        <div
-          style={{
-            position: "absolute",
-            left: Math.round(size * 0.43),
-            top: Math.round(size * 0.55),
-            width: Math.round(size * 0.13),
-            height: Math.round(size * 0.38),
-            display: "flex",
-            flexDirection: "column"
-          }}
-        >
-          <div
-            style={{
-              width: Math.round(size * 0.12),
-              height: Math.round(size * 0.2),
-              background: "#111",
-              transform: "skew(-18deg)"
-            }}
-          />
-          <div
-            style={{
-              width: Math.round(size * 0.12),
-              height: Math.round(size * 0.2),
-              marginTop: -2,
-              marginLeft: Math.round(size * 0.05),
-              background: "#111",
-              transform: "skew(-18deg)"
-            }}
-          />
-        </div>
-      ) : null}
-      {kind === "fog"
-        ? [0.57, 0.71, 0.85].map((top, index) => (
-            <div
-              key={index}
-              style={{
-                position: "absolute",
-                left: Math.round(size * (index === 2 ? 0.24 : 0.14)),
-                top: Math.round(size * top),
-                width: Math.round(size * (index === 1 ? 0.72 : 0.6)),
-                height: Math.max(2, Math.round(size * 0.05)),
-                background: "#111",
-                borderRadius: 6
-              }}
-            />
-          ))
-        : null}
+      {/* eslint-disable-next-line @next/next/no-img-element -- Bootstrap weather SVGs render reliably as data URI images inside next/og. */}
+      <img src={imageSrc} alt="" width={size} height={size} style={{ width: size, height: size }} />
     </div>
   );
 }
