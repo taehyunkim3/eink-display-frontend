@@ -33,11 +33,13 @@ export type StockQuote = {
   code: string;
   name: string;
   market: string | null;
+  category: "equity" | "index" | "fx" | "commodity";
   price: string | null;
   change: string | null;
   changePercent: string | null;
   direction: "up" | "down" | "flat" | "unknown";
   tradedAt: string | null;
+  history: number[];
 };
 
 export type DashboardData = {

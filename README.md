@@ -44,10 +44,10 @@ Open-Meteo를 사용합니다. `WEATHER_LATITUDE`, `WEATHER_LONGITUDE`, `WEATHER
 
 ## Market
 
-국내 종목은 네이버 금융, WTI 유가는 Yahoo Finance를 사용합니다. `STOCK_SYMBOLS`를 설정하지 않으면 삼성전자, SK하이닉스, 제주반도체, 디앤디파마텍, LG이노텍, WTI 유가(달러)를 표시합니다.
+국내 종목은 네이버 금융, 주요 지수/환율/WTI 유가는 Yahoo Finance를 사용합니다. `STOCK_SYMBOLS`를 설정하지 않으면 삼성전자, SK하이닉스, 제주반도체, 디앤디파마텍, LG이노텍, KOSPI, KOSDAQ, S&P 500, NASDAQ, USD/KRW, WTI 유가(달러)를 표시합니다. KRX 항목의 4번째 값은 그래프용 Yahoo 심볼입니다.
 
 ```env
-STOCK_SYMBOLS="KRX:005930:삼성전자,KRX:000660:SK하이닉스,KRX:080220:제주반도체,KRX:347850:디앤디파마텍,KRX:011070:LG이노텍,YAHOO:CL=F:WTI 유가(달러)"
+STOCK_SYMBOLS="KRX:005930:삼성전자:005930.KS,KRX:000660:SK하이닉스:000660.KS,KRX:080220:제주반도체:080220.KQ,KRX:347850:디앤디파마텍:347850.KQ,KRX:011070:LG이노텍:011070.KS,YAHOO:^KS11:KOSPI,YAHOO:^KQ11:KOSDAQ,YAHOO:^GSPC:S&P 500,YAHOO:^IXIC:NASDAQ,YAHOO:KRW=X:USD/KRW,YAHOO:CL=F:WTI 유가(달러)"
 ```
 
 ## Local

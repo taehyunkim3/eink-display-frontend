@@ -48,37 +48,54 @@ type StockSymbol = {
   provider: "krx" | "yahoo";
   code: string;
   fallbackName: string;
+  category: StockQuote["category"];
+  yahooCode?: string;
 };
 
 const DEFAULT_STOCKS = [
-  ["krx", "005930", "삼성전자"],
-  ["krx", "000660", "SK하이닉스"],
-  ["krx", "080220", "제주반도체"],
-  ["krx", "347850", "디앤디파마텍"],
-  ["krx", "011070", "LG이노텍"],
-  ["yahoo", "CL=F", "WTI 유가(달러)"]
+  ["krx", "005930", "삼성전자", "equity", "005930.KS"],
+  ["krx", "000660", "SK하이닉스", "equity", "000660.KS"],
+  ["krx", "080220", "제주반도체", "equity", "080220.KQ"],
+  ["krx", "347850", "디앤디파마텍", "equity", "347850.KQ"],
+  ["krx", "011070", "LG이노텍", "equity", "011070.KS"],
+  ["yahoo", "^KS11", "KOSPI", "index"],
+  ["yahoo", "^KQ11", "KOSDAQ", "index"],
+  ["yahoo", "^GSPC", "S&P 500", "index"],
+  ["yahoo", "^IXIC", "NASDAQ", "index"],
+  ["yahoo", "KRW=X", "USD/KRW", "fx"],
+  ["yahoo", "CL=F", "WTI 유가(달러)", "commodity"]
 ] as const;
 
 function defaultStockSymbols(): StockSymbol[] {
-  return DEFAULT_STOCKS.map(([provider, code, fallbackName]) => ({
+  return DEFAULT_STOCKS.map(([provider, code, fallbackName, category, yahooCode]) => ({
     provider,
     code,
-    fallbackName
+    fallbackName,
+    category,
+    yahooCode
   }));
+}
+
+function inferYahooCategory(code: string): StockQuote["category"] {
+  if (code.endsWith("=X")) return "fx";
+  if (code.endsWith("=F")) return "commodity";
+  return "index";
 }
 
 function parseStockSymbol(item: string): StockSymbol | null {
   const parts = item.split(":").map((value) => value.trim());
   if (parts.length === 0) return null;
 
-  const [first, second, third] = parts;
+  const [first, second, third, fourth] = parts;
   const provider = first.toLowerCase();
 
   if ((provider === "krx" || provider === "yahoo") && second) {
     return {
       provider,
       code: second,
-      fallbackName: third || second
+      fallbackName: third || second,
+      category: provider === "krx" ? "equity" : inferYahooCategory(second),
+      yahooCode: provider === "krx" ? fourth : undefined
     };
   }
 
@@ -86,7 +103,9 @@ function parseStockSymbol(item: string): StockSymbol | null {
     ? {
         provider: "krx",
         code: first,
-        fallbackName: second || first
+        fallbackName: second || first,
+        category: "equity",
+        yahooCode: third
       }
     : null;
 }
@@ -102,7 +121,7 @@ function stockSymbols(): StockSymbol[] {
     .map(parseStockSymbol)
     .filter((item): item is StockSymbol => item !== null);
 
-  return parsed.length > 0 ? parsed.slice(0, 8) : defaultStockSymbols();
+  return parsed.length > 0 ? parsed.slice(0, 12) : defaultStockSymbols();
 }
 
 function directionFrom(item: NaverStockItem): StockQuote["direction"] {
@@ -118,6 +137,7 @@ function directionFrom(item: NaverStockItem): StockQuote["direction"] {
 async function getStockQuote(
   code: string,
   fallbackName: string,
+  yahooCode: string | undefined,
   options: FetchFreshOptions
 ): Promise<StockQuote> {
   const url = new URL(`https://polling.finance.naver.com/api/realtime/domestic/stock/${code}`);
@@ -134,25 +154,43 @@ async function getStockQuote(
 
   const data = (await response.json()) as NaverStockResponse;
   const item = data.datas?.[0] ?? {};
+  let history: number[] = [];
+
+  if (yahooCode) {
+    try {
+      history = (await getYahooSnapshot(yahooCode, options)).history;
+    } catch {
+      history = [];
+    }
+  }
 
   return {
     code: item.itemCode ?? code,
     name: item.stockName ?? fallbackName,
     market: item.stockExchangeType?.nameKor ?? null,
+    category: "equity",
     price: item.closePrice ?? null,
     change: item.compareToPreviousClosePrice ?? null,
     changePercent: item.fluctuationsRatio ?? null,
     direction: directionFrom(item),
-    tradedAt: item.localTradedAt ?? null
+    tradedAt: item.localTradedAt ?? null,
+    history
   };
 }
 
-function formatUsdPrice(value: number | undefined): string | null {
-  return typeof value === "number" && Number.isFinite(value) ? value.toFixed(2) : null;
+function formatMarketPrice(value: number | undefined, category: StockQuote["category"]): string | null {
+  if (typeof value !== "number" || !Number.isFinite(value)) return null;
+  if (category === "fx") return value.toLocaleString("en-US", { maximumFractionDigits: 2 });
+  if (category === "index") return value.toLocaleString("en-US", { maximumFractionDigits: 2 });
+  return value.toFixed(2);
 }
 
-function formatUsdChange(value: number | undefined): string | null {
-  return typeof value === "number" && Number.isFinite(value) ? Math.abs(value).toFixed(2) : null;
+function formatMarketChange(value: number | undefined, category: StockQuote["category"]): string | null {
+  if (typeof value !== "number" || !Number.isFinite(value)) return null;
+  if (category === "index" || category === "fx") {
+    return Math.abs(value).toLocaleString("en-US", { maximumFractionDigits: 2 });
+  }
+  return Math.abs(value).toFixed(2);
 }
 
 function directionFromChange(change: number): StockQuote["direction"] {
@@ -170,11 +208,18 @@ function latestNumber(values: Array<number | null>): number | undefined {
   return undefined;
 }
 
-async function getYahooQuote(
+type YahooSnapshot = {
+  price: number | undefined;
+  previousClose: number | undefined;
+  market: string | null;
+  tradedAt: string | null;
+  history: number[];
+};
+
+async function getYahooSnapshot(
   code: string,
-  fallbackName: string,
   options: FetchFreshOptions
-): Promise<StockQuote> {
+): Promise<YahooSnapshot> {
   const url = new URL(`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(code)}`);
   url.searchParams.set("range", "5d");
   url.searchParams.set("interval", "1d");
@@ -192,35 +237,62 @@ async function getYahooQuote(
 
   const data = (await response.json()) as YahooChartResponse;
   const result = data.chart?.result?.[0];
-  const closes = result?.indicators?.quote?.[0]?.close ?? [];
+  const closes = (result?.indicators?.quote?.[0]?.close ?? []).filter(
+    (value): value is number => typeof value === "number"
+  );
   const latestClose = latestNumber(closes);
+  const previousSeriesClose = closes.length >= 2 ? closes[closes.length - 2] : undefined;
   const price = result?.meta?.regularMarketPrice ?? latestClose;
-  const previousClose = result?.meta?.previousClose ?? result?.meta?.chartPreviousClose;
+  const previousClose =
+    previousSeriesClose ?? result?.meta?.previousClose ?? result?.meta?.chartPreviousClose;
+
+  return {
+    price,
+    previousClose,
+    market: result?.meta?.currency ?? result?.meta?.exchangeName ?? null,
+    tradedAt: result?.meta?.regularMarketTime
+      ? new Date(result.meta.regularMarketTime * 1000).toISOString()
+      : null,
+    history: closes
+  };
+}
+
+async function getYahooQuote(
+  code: string,
+  fallbackName: string,
+  category: StockQuote["category"],
+  options: FetchFreshOptions
+): Promise<StockQuote> {
+  const snapshot = await getYahooSnapshot(code, options);
   const change =
-    typeof price === "number" && typeof previousClose === "number" ? price - previousClose : 0;
+    typeof snapshot.price === "number" && typeof snapshot.previousClose === "number"
+      ? snapshot.price - snapshot.previousClose
+      : 0;
   const changePercent =
-    typeof previousClose === "number" && previousClose !== 0 ? (change / previousClose) * 100 : 0;
+    typeof snapshot.previousClose === "number" && snapshot.previousClose !== 0
+      ? (change / snapshot.previousClose) * 100
+      : 0;
 
   return {
     code,
     name: fallbackName,
-    market: result?.meta?.currency ?? result?.meta?.exchangeName ?? null,
-    price: formatUsdPrice(price),
-    change: formatUsdChange(change),
+    market: snapshot.market,
+    category,
+    price: formatMarketPrice(snapshot.price, category),
+    change: formatMarketChange(change, category),
     changePercent: Math.abs(changePercent).toFixed(2),
     direction: directionFromChange(change),
-    tradedAt: result?.meta?.regularMarketTime
-      ? new Date(result.meta.regularMarketTime * 1000).toISOString()
-      : null
+    tradedAt: snapshot.tradedAt,
+    history: snapshot.history
   };
 }
 
 function getQuote(symbol: StockSymbol, options: FetchFreshOptions): Promise<StockQuote> {
   if (symbol.provider === "yahoo") {
-    return getYahooQuote(symbol.code, symbol.fallbackName, options);
+    return getYahooQuote(symbol.code, symbol.fallbackName, symbol.category, options);
   }
 
-  return getStockQuote(symbol.code, symbol.fallbackName, options);
+  return getStockQuote(symbol.code, symbol.fallbackName, symbol.yahooCode, options);
 }
 
 export async function getStockQuotes(options: FetchFreshOptions = {}): Promise<StockQuote[]> {
