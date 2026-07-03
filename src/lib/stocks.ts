@@ -65,6 +65,21 @@ const DEFAULT_STOCKS = [
   ["yahoo", "KRW=X", "USD/KRW", "fx"],
   ["yahoo", "CL=F", "WTI 유가(달러)", "commodity"]
 ] as const;
+const MARKET_FETCH_TIMEOUT_MS = 2500;
+
+function marketFetchOptions(
+  options: FetchFreshOptions,
+  headers?: HeadersInit
+): { cache: "no-store"; headers?: HeadersInit; signal: AbortSignal } | {
+  next: { revalidate: number };
+  headers?: HeadersInit;
+  signal: AbortSignal;
+} {
+  const signal = AbortSignal.timeout(MARKET_FETCH_TIMEOUT_MS);
+  return options.forceRefresh
+    ? { cache: "no-store", headers, signal }
+    : { next: { revalidate: 60 }, headers, signal };
+}
 
 function defaultStockSymbols(): StockSymbol[] {
   return DEFAULT_STOCKS.map(([provider, code, fallbackName, category, yahooCode]) => ({
@@ -143,10 +158,7 @@ async function getStockQuote(
   const url = new URL(`https://polling.finance.naver.com/api/realtime/domestic/stock/${code}`);
   url.searchParams.set("query", `SERVICE_ITEM:${code}`);
 
-  const response = await fetch(
-    url,
-    options.forceRefresh ? { cache: "no-store" } : { next: { revalidate: 60 } }
-  );
+  const response = await fetch(url, marketFetchOptions(options));
 
   if (!response.ok) {
     throw new Error(`Stock request failed: ${code} ${response.status}`);
@@ -226,9 +238,7 @@ async function getYahooSnapshot(
 
   const response = await fetch(
     url,
-    options.forceRefresh
-      ? { cache: "no-store", headers: { "User-Agent": "Mozilla/5.0" } }
-      : { next: { revalidate: 60 }, headers: { "User-Agent": "Mozilla/5.0" } }
+    marketFetchOptions(options, { "User-Agent": "Mozilla/5.0" })
   );
 
   if (!response.ok) {

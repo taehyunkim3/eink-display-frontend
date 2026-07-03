@@ -19,14 +19,19 @@ export async function GET(request: NextRequest) {
   const deviceStatus = parseDeviceStatus(request.nextUrl.searchParams);
   const photoSrc = await getHomePhotoSrc();
 
-  return new ImageResponse(
+  const png = new ImageResponse(
     <ScreenView data={data} deviceStatus={deviceStatus} photoSrc={photoSrc} />,
     {
       width: SCREEN_WIDTH,
       height: SCREEN_HEIGHT,
-      headers: {
-        "Cache-Control": "private, no-store"
-      }
     }
   );
+  const pngBuffer = await png.arrayBuffer();
+
+  return new Response(pngBuffer, {
+    headers: {
+      "Cache-Control": "private, no-store",
+      "Content-Type": "image/png"
+    }
+  });
 }

@@ -87,6 +87,12 @@ function calendarEventMeta(event: CalendarEvent): string | null {
   return values.length > 0 ? values.join(" · ") : null;
 }
 
+function calendarEventTimeLabel(event: CalendarEvent): string {
+  if (event.allDay) return "종일";
+  const parts = formatEventTime(event).split(" ");
+  return parts[parts.length - 1] ?? "";
+}
+
 function eventDateKey(event: CalendarEvent): string {
   return KOREAN_DATE_PARTS.format(new Date(event.startsAt));
 }
@@ -111,6 +117,14 @@ function monthCells(value: string): Date[] {
   });
 }
 
+function chunkArray<T>(items: T[], size: number): T[][] {
+  const chunks: T[][] = [];
+  for (let index = 0; index < items.length; index += size) {
+    chunks.push(items.slice(index, index + size));
+  }
+  return chunks;
+}
+
 function weatherIconKind(code: number | null): "sun" | "cloud" | "rain" | "snow" | "storm" | "fog" {
   if (code === null) return "cloud";
   if (code === 0 || code === 1) return "sun";
@@ -124,92 +138,76 @@ function weatherIconKind(code: number | null): "sun" | "cloud" | "rain" | "snow"
 
 function WeatherIcon({ code, size = 58 }: { code: number | null; size?: number }) {
   const kind = weatherIconKind(code);
-  const common = {
-    fill: "none",
-    stroke: "#111",
-    strokeWidth: 4,
-    strokeLinecap: "round" as const,
-    strokeLinejoin: "round" as const
-  };
+  const label = {
+    sun: "해",
+    cloud: "구름",
+    rain: "비",
+    snow: "눈",
+    storm: "번개",
+    fog: "안개"
+  }[kind];
 
   return (
-    <svg width={size} height={size} viewBox="0 0 72 72" aria-hidden="true">
-      {kind === "sun" ? (
-        <>
-          <circle cx="36" cy="36" r="16" {...common} />
-          {[12, 20, 36, 52, 60].map((point) => (
-            <line key={`sun-x-${point}`} x1={point} y1="36" x2={point < 36 ? point - 7 : point + 7} y2="36" {...common} />
-          ))}
-          {[12, 20, 52, 60].map((point) => (
-            <line key={`sun-y-${point}`} x1="36" y1={point} x2="36" y2={point < 36 ? point - 7 : point + 7} {...common} />
-          ))}
-          <circle cx="30" cy="34" r="2" fill="#111" />
-          <circle cx="42" cy="34" r="2" fill="#111" />
-          <path d="M30 42c4 4 8 4 12 0" {...common} strokeWidth={3} />
-        </>
-      ) : null}
-      {kind === "cloud" ? (
-        <>
-          <path d="M18 46h34c7 0 11-4 11-10s-5-10-11-10h-2C47 18 41 14 33 14c-10 0-17 7-18 17-6 1-10 5-10 10 0 4 4 5 13 5Z" {...common} />
-          <circle cx="31" cy="35" r="2" fill="#111" />
-          <circle cx="43" cy="35" r="2" fill="#111" />
-          <path d="M32 42c3 2 7 2 10 0" {...common} strokeWidth={3} />
-        </>
-      ) : null}
-      {kind === "rain" ? (
-        <>
-          <path d="M18 38h35c6 0 10-4 10-9 0-6-5-10-11-10h-3c-3-6-9-9-16-9-10 0-17 7-18 16-6 1-10 5-10 9 0 2 4 3 13 3Z" {...common} />
-          <path d="M24 47l-5 9M39 47l-5 9M54 47l-5 9" {...common} />
-          <circle cx="31" cy="27" r="2" fill="#111" />
-          <circle cx="43" cy="27" r="2" fill="#111" />
-        </>
-      ) : null}
-      {kind === "snow" ? (
-        <>
-          <path d="M18 38h35c6 0 10-4 10-9 0-6-5-10-11-10h-3c-3-6-9-9-16-9-10 0-17 7-18 16-6 1-10 5-10 9 0 2 4 3 13 3Z" {...common} />
-          <path d="M24 51h10M29 46v10M45 51h10M50 46v10" {...common} />
-        </>
-      ) : null}
-      {kind === "storm" ? (
-        <>
-          <path d="M18 38h35c6 0 10-4 10-9 0-6-5-10-11-10h-3c-3-6-9-9-16-9-10 0-17 7-18 16-6 1-10 5-10 9 0 2 4 3 13 3Z" {...common} />
-          <path d="M38 42l-8 14h10l-5 10" {...common} />
-        </>
-      ) : null}
-      {kind === "fog" ? (
-        <>
-          <path d="M18 32h35c6 0 10-4 10-9 0-6-5-10-11-10h-3c-3-6-9-9-16-9-10 0-17 7-18 16" {...common} />
-          <path d="M12 43h48M18 53h42M10 62h36" {...common} />
-        </>
-      ) : null}
-    </svg>
+    <div
+      style={{
+        width: size,
+        height: size,
+        border: "3px solid #111",
+        borderRadius: size / 2,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: label.length > 1 ? Math.floor(size * 0.3) : Math.floor(size * 0.48),
+        fontWeight: 900,
+        lineHeight: 1
+      }}
+    >
+      {label}
+    </div>
   );
 }
 
-function Sparkline({ values, width = 134, height = 38 }: { values: number[]; width?: number; height?: number }) {
-  if (values.length < 2) {
-    return (
-      <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} aria-hidden="true">
-        <line x1="0" y1={height / 2} x2={width} y2={height / 2} stroke="#111" strokeWidth="2" strokeDasharray="4 4" />
-      </svg>
-    );
-  }
+function sparklineBars(values: number[], size: number, height: number) {
+  const validValues = values.filter((value) => Number.isFinite(value));
 
-  const min = Math.min(...values);
-  const max = Math.max(...values);
+  if (validValues.length < 2) return Array.from({ length: size }, () => Math.max(2, Math.floor(height * 0.35)));
+
+  const sampleStep = Math.max(1, Math.floor(validValues.length / size));
+  const sampled = validValues.filter((_, index) => index % sampleStep === 0).slice(-size);
+  const min = Math.min(...sampled);
+  const max = Math.max(...sampled);
   const range = max - min || 1;
-  const points = values
-    .map((value, index) => {
-      const x = (index / (values.length - 1)) * width;
-      const y = height - ((value - min) / range) * (height - 6) - 3;
-      return `${x.toFixed(1)},${y.toFixed(1)}`;
-    })
-    .join(" ");
+
+  return sampled.map((value) => Math.max(2, Math.round(3 + ((value - min) / range) * (height - 5))));
+}
+
+function Sparkline({ values, width = 134, height = 38 }: { values: number[]; width?: number; height?: number }) {
+  const bars = sparklineBars(values, Math.max(6, Math.floor(width / 7)), height);
+  const barWidth = Math.max(2, Math.floor((width - bars.length + 1) / bars.length));
 
   return (
-    <svg width={width} height={height} viewBox={`0 0 ${width} ${height}`} aria-hidden="true">
-      <polyline points={points} fill="none" stroke="#111" strokeWidth="3" strokeLinejoin="round" strokeLinecap="round" />
-    </svg>
+    <div
+      style={{
+        width,
+        height,
+        display: "flex",
+        alignItems: "flex-end",
+        justifyContent: "flex-end",
+        gap: 1,
+        overflow: "hidden"
+      }}
+    >
+      {bars.map((barHeight, index) => (
+        <div
+          key={index}
+          style={{
+            width: barWidth,
+            height: barHeight,
+            background: "#111"
+          }}
+        />
+      ))}
+    </div>
   );
 }
 
@@ -414,8 +412,7 @@ function WeeklyWeatherPanel({ data }: { data: DashboardData }) {
     <PanelShell title="주간날씨" subtitle="7일 예보">
       <div
         style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
+          display: "flex",
           gap: 9,
           marginTop: 16,
           flex: 1,
@@ -428,6 +425,7 @@ function WeeklyWeatherPanel({ data }: { data: DashboardData }) {
               key={day.date}
               style={{
                 minWidth: 0,
+                flex: 1,
                 border: "2px solid #111",
                 padding: "9px 8px",
                 display: "flex",
@@ -443,9 +441,9 @@ function WeeklyWeatherPanel({ data }: { data: DashboardData }) {
               <WeatherIcon code={day.weatherCode} />
               <div style={{ fontSize: 18, lineHeight: 1.1 }}>{day.condition}</div>
               <div style={{ fontSize: 17 }}>
-                {formatTemperature(day.minTemperatureC)} / {formatTemperature(day.maxTemperatureC)}
+                {`${formatTemperature(day.minTemperatureC)} / ${formatTemperature(day.maxTemperatureC)}`}
               </div>
-              <div style={{ fontSize: 14 }}>비 {formatPercent(day.precipitationProbabilityPercent)}</div>
+              <div style={{ fontSize: 14 }}>{`비 ${formatPercent(day.precipitationProbabilityPercent)}`}</div>
             </div>
           ))
         ) : (
@@ -459,7 +457,11 @@ function WeeklyWeatherPanel({ data }: { data: DashboardData }) {
 function CalendarPanel({ data }: { data: DashboardData }) {
   const baseDate = new Date(data.generatedAt);
   const cells = monthCells(data.generatedAt);
+  const weeks = chunkArray(cells, 7);
   const currentMonth = baseDate.getMonth();
+  const contentWidth = SCREEN_WIDTH - 58;
+  const dayCellWidth = 102;
+  const dayCellHeight = 47;
   const eventsByDate = data.events.reduce<Record<string, CalendarEvent[]>>((acc, event) => {
     const key = eventDateKey(event);
     acc[key] = [...(acc[key] ?? []), event];
@@ -474,75 +476,81 @@ function CalendarPanel({ data }: { data: DashboardData }) {
     >
       <div
         style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(7, minmax(0, 1fr))",
-          gridTemplateRows: "26px repeat(6, minmax(0, 1fr))",
+          display: "flex",
+          flexDirection: "column",
           gap: 4,
           marginTop: 12,
-          flex: 1,
-          minHeight: 0
+          width: contentWidth,
+          height: 332
         }}
       >
-        {WEEKDAY_LABELS.map((label) => (
-          <div
-            key={label}
-            style={{
-              borderBottom: "2px solid #111",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: 15,
-              fontWeight: 900
-            }}
-          >
-            {label}
-          </div>
-        ))}
-        {cells.map((cell) => {
-          const key = dateKey(cell);
-          const dayEvents = eventsByDate[key] ?? [];
-          const muted = cell.getMonth() !== currentMonth;
-
-          return (
+        <div style={{ display: "flex", gap: 4, height: 26 }}>
+          {WEEKDAY_LABELS.map((label) => (
             <div
-              key={key}
+              key={label}
               style={{
-                minWidth: 0,
-                minHeight: 0,
-                border: muted ? "1px solid #777" : "2px solid #111",
-                padding: "3px 5px",
+                width: dayCellWidth,
+                borderBottom: "2px solid #111",
                 display: "flex",
-                flexDirection: "column",
-                gap: 2,
-                opacity: muted ? 0.45 : 1
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 15,
+                fontWeight: 900
               }}
             >
-              <div style={{ fontSize: 14, fontWeight: 900 }}>{cell.getDate()}</div>
-              {dayEvents.slice(0, 2).map((event) => (
+              {label}
+            </div>
+          ))}
+        </div>
+        {weeks.map((week, weekIndex) => (
+          <div key={weekIndex} style={{ display: "flex", gap: 4, height: dayCellHeight }}>
+            {week.map((cell) => {
+              const key = dateKey(cell);
+              const dayEvents = eventsByDate[key] ?? [];
+              const muted = cell.getMonth() !== currentMonth;
+
+              return (
                 <div
-                  key={event.uid}
+                  key={key}
                   style={{
-                    borderLeft: "3px solid #111",
-                    paddingLeft: 4,
-                    minWidth: 0,
-                    fontSize: 9,
-                    fontWeight: 900,
-                    lineHeight: 1.1,
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis"
+                    width: dayCellWidth,
+                    height: dayCellHeight,
+                    border: muted ? "1px solid #777" : "2px solid #111",
+                    padding: "3px 5px",
+                    display: "flex",
+                    flexDirection: "column",
+                    gap: 2,
+                    opacity: muted ? 0.45 : 1
                   }}
                 >
-                  {event.allDay ? "종일" : formatEventTime(event).split(" ").at(-1)} ·{" "}
-                  {event.calendarName ?? "캘린더"} · {event.title}
+                  <div style={{ display: "flex", fontSize: 14, fontWeight: 900 }}>{cell.getDate()}</div>
+                  {dayEvents.slice(0, 2).map((event) => (
+                    <div
+                      key={event.uid}
+                      style={{
+                        display: "flex",
+                        borderLeft: "3px solid #111",
+                        paddingLeft: 4,
+                        minWidth: 0,
+                        fontSize: 9,
+                        fontWeight: 900,
+                        lineHeight: 1.1,
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis"
+                      }}
+                    >
+                      {`${calendarEventTimeLabel(event)} · ${event.calendarName ?? "캘린더"} · ${event.title}`}
+                    </div>
+                  ))}
+                  {dayEvents.length > 2 ? (
+                    <div style={{ display: "flex", fontSize: 10, fontWeight: 900 }}>{`+${dayEvents.length - 2}`}</div>
+                  ) : null}
                 </div>
-              ))}
-              {dayEvents.length > 2 ? (
-                <div style={{ fontSize: 10, fontWeight: 900 }}>+{dayEvents.length - 2}</div>
-              ) : null}
-            </div>
-          );
-        })}
+              );
+            })}
+          </div>
+        ))}
       </div>
     </PanelShell>
   );
@@ -610,81 +618,50 @@ function StockRow({ stock, compact = false }: { stock: StockQuote; compact?: boo
   );
 }
 
-function MarketCard({ stock }: { stock: StockQuote }) {
+function MarketListRow({ stock }: { stock: StockQuote }) {
+  const change = formatSignedStockValue(stock, stock.change);
   const rate = formatSignedStockValue(stock, stock.changePercent, "%");
 
   return (
     <div
       style={{
-        border: "2px solid #111",
-        boxSizing: "border-box",
-        height: 82,
-        padding: "6px 9px",
         display: "flex",
-        flexDirection: "column",
-        minWidth: 0,
-        gap: 1,
+        alignItems: "center",
+        gap: 8,
+        width: 362,
+        paddingBottom: 5,
+        borderBottom: "1px solid #111",
         fontWeight: 900
       }}
     >
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}>
-        <div style={{ minWidth: 0 }}>
-          <div
-            style={{
-              fontSize: 16,
-              whiteSpace: "nowrap",
-              overflow: "hidden",
-              textOverflow: "ellipsis"
-            }}
-          >
-            {stock.name}
-          </div>
-          <div style={{ fontSize: 11, color: "#555" }}>{stockCategoryLabel(stock)}</div>
+      <div style={{ width: 134, display: "flex", flexDirection: "column" }}>
+        <div
+          style={{
+            fontSize: 14,
+            whiteSpace: "nowrap",
+            overflow: "hidden",
+            textOverflow: "ellipsis"
+          }}
+        >
+          {stock.name}
         </div>
-        <div style={{ textAlign: "right", fontSize: 11 }}>{stockDirectionLabel(stock)}</div>
+        <div style={{ fontSize: 10, color: "#555" }}>{stockCategoryLabel(stock)}</div>
       </div>
-      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 8 }}>
-        <div>
-          <div style={{ fontSize: 17 }}>{stock.price ?? "--"}</div>
-          <div style={{ fontSize: 11 }}>{rate}</div>
-        </div>
-        <Sparkline values={stock.history} width={78} height={22} />
-      </div>
-    </div>
-  );
-}
-
-function EquityCard({ stock }: { stock: StockQuote }) {
-  const rate = formatSignedStockValue(stock, stock.changePercent, "%");
-
-  return (
-    <div
-      style={{
-        border: "2px solid #111",
-        boxSizing: "border-box",
-        height: 76,
-        padding: "5px 7px",
-        minWidth: 0,
-        display: "flex",
-        flexDirection: "column",
-        gap: 2,
-        fontWeight: 900
-      }}
-    >
+      <div style={{ width: 70, textAlign: "right", fontSize: 14 }}>{stock.price ?? "--"}</div>
+      <Sparkline values={stock.history} width={58} height={16} />
       <div
         style={{
-          fontSize: 14,
-          whiteSpace: "nowrap",
-          overflow: "hidden",
-          textOverflow: "ellipsis"
+          width: 62,
+          textAlign: "right",
+          fontSize: 11,
+          display: "flex",
+          flexDirection: "column"
         }}
       >
-        {stock.name}
-      </div>
-      <div style={{ fontSize: 16 }}>{stock.price ?? "--"}</div>
-      <Sparkline values={stock.history} width={104} height={20} />
-      <div style={{ fontSize: 11 }}>
-        {stockDirectionLabel(stock)} {rate}
+        <span>
+          {stockDirectionLabel(stock)} {rate}
+        </span>
+        <span>{change}</span>
       </div>
     </div>
   );
@@ -693,38 +670,29 @@ function EquityCard({ stock }: { stock: StockQuote }) {
 function StocksPanel({ data }: { data: DashboardData }) {
   const marketItems = data.stocks.filter((stock) => stock.category !== "equity");
   const equities = data.stocks.filter((stock) => stock.category === "equity");
+  const contentWidth = SCREEN_WIDTH - 58;
+  const columnWidth = 362;
 
   return (
     <PanelShell title="시장지표" subtitle="지수 · 환율 · 관심종목">
-      <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 12, flex: 1, minHeight: 0 }}>
+      <div style={{ display: "flex", gap: 18, marginTop: 12, width: contentWidth, height: 312 }}>
         {data.stocks.length > 0 ? (
           <>
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(3, minmax(0, 1fr))",
-                gap: 7
-              }}
-            >
+            <div style={{ display: "flex", flexDirection: "column", gap: 5, width: columnWidth }}>
+              <div style={{ fontSize: 15, fontWeight: 900, borderBottom: "2px solid #111", paddingBottom: 4 }}>
+                주요 지표
+              </div>
               {marketItems.slice(0, 6).map((stock) => (
-                <MarketCard key={stock.code} stock={stock} />
+                <MarketListRow key={stock.code} stock={stock} />
               ))}
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 5, minHeight: 0 }}>
-              <div style={{ fontSize: 14, fontWeight: 900, borderBottom: "2px solid #111", paddingBottom: 3 }}>
+            <div style={{ display: "flex", flexDirection: "column", gap: 5, width: columnWidth }}>
+              <div style={{ fontSize: 15, fontWeight: 900, borderBottom: "2px solid #111", paddingBottom: 4 }}>
                 관심 종목
               </div>
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(5, minmax(0, 1fr))",
-                  gap: 6
-                }}
-              >
-                {equities.slice(0, 5).map((stock) => (
-                  <EquityCard key={stock.code} stock={stock} />
-                ))}
-              </div>
+              {equities.slice(0, 5).map((stock) => (
+                <MarketListRow key={stock.code} stock={stock} />
+              ))}
             </div>
           </>
         ) : (
