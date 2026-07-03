@@ -1,4 +1,4 @@
-import type { WeatherSnapshot } from "./types";
+import type { HourlyForecast, WeatherSnapshot } from "./types";
 
 type OpenMeteoCurrent = {
   temperature_2m?: number;
@@ -17,6 +17,13 @@ type OpenMeteoResponse = {
     temperature_2m_max?: Array<number | null>;
     temperature_2m_min?: Array<number | null>;
     precipitation_probability_max?: Array<number | null>;
+  };
+  hourly?: {
+    time?: string[];
+    temperature_2m?: Array<number | null>;
+    precipitation_probability?: Array<number | null>;
+    weather_code?: Array<number | null>;
+    wind_speed_10m?: Array<number | null>;
   };
 };
 
@@ -51,6 +58,23 @@ type FetchFreshOptions = {
   forceRefresh?: boolean;
 };
 
+const HOURLY_DISPLAY_HOURS = new Set([6, 12, 18, 23]);
+
+function localDateKey(value: string): string {
+  return value.slice(0, 10);
+}
+
+function localHour(value: string): number | null {
+  const match = value.match(/T(\d{2}):/);
+  if (!match) return null;
+  const hour = Number(match[1]);
+  return Number.isFinite(hour) ? hour : null;
+}
+
+function hourlyCondition(code: number | null): string {
+  return code === null ? "날씨 정보 없음" : WEATHER_CODE_LABELS[code] ?? "날씨 확인";
+}
+
 export async function getWeather(options: FetchFreshOptions = {}): Promise<WeatherSnapshot> {
   const latitude = numberEnv("WEATHER_LATITUDE", 37.5665);
   const longitude = numberEnv("WEATHER_LONGITUDE", 126.978);
@@ -67,6 +91,10 @@ export async function getWeather(options: FetchFreshOptions = {}): Promise<Weath
   url.searchParams.set(
     "daily",
     "weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max"
+  );
+  url.searchParams.set(
+    "hourly",
+    "temperature_2m,precipitation_probability,weather_code,wind_speed_10m"
   );
   url.searchParams.set("forecast_days", "7");
   url.searchParams.set("timezone", timezone);
@@ -85,6 +113,29 @@ export async function getWeather(options: FetchFreshOptions = {}): Promise<Weath
   const weatherCode = current.weather_code ?? null;
   const daily = data.daily ?? {};
   const dates = daily.time ?? [];
+  const hourly = data.hourly ?? {};
+  const hourlyItems = (hourly.time ?? []).reduce<Record<string, HourlyForecast[]>>(
+    (acc, time, index) => {
+      const hour = localHour(time);
+      if (hour === null || !HOURLY_DISPLAY_HOURS.has(hour)) return acc;
+
+      const hourlyWeatherCode = hourly.weather_code?.[index] ?? null;
+      const key = localDateKey(time);
+      acc[key] = [
+        ...(acc[key] ?? []),
+        {
+          time,
+          temperatureC: hourly.temperature_2m?.[index] ?? null,
+          precipitationProbabilityPercent: hourly.precipitation_probability?.[index] ?? null,
+          weatherCode: hourlyWeatherCode,
+          windKph: hourly.wind_speed_10m?.[index] ?? null,
+          condition: hourlyCondition(hourlyWeatherCode)
+        }
+      ];
+      return acc;
+    },
+    {}
+  );
 
   return {
     label,
@@ -107,7 +158,8 @@ export async function getWeather(options: FetchFreshOptions = {}): Promise<Weath
         condition:
           dailyWeatherCode === null
             ? "날씨 정보 없음"
-            : WEATHER_CODE_LABELS[dailyWeatherCode] ?? "날씨 확인"
+            : WEATHER_CODE_LABELS[dailyWeatherCode] ?? "날씨 확인",
+        hourly: hourlyItems[date] ?? []
       };
     })
   };

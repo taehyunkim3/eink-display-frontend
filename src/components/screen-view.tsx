@@ -32,12 +32,6 @@ export const SCREEN_PAGE_TITLES = [
 ] as const;
 export const SCREEN_PAGE_COUNT = SCREEN_PAGE_TITLES.length;
 
-const KOREAN_DAY = new Intl.DateTimeFormat("ko-KR", {
-  month: "short",
-  day: "numeric",
-  weekday: "short",
-  timeZone: "Asia/Seoul"
-});
 const KOREAN_DATE_PARTS = new Intl.DateTimeFormat("en-CA", {
   year: "numeric",
   month: "2-digit",
@@ -50,8 +44,19 @@ function normalizePage(page: number) {
   return ((page % SCREEN_PAGE_COUNT) + SCREEN_PAGE_COUNT) % SCREEN_PAGE_COUNT;
 }
 
-function formatForecastDate(value: string): string {
-  return KOREAN_DAY.format(new Date(`${value}T00:00:00+09:00`));
+function formatForecastShortDate(value: string): string {
+  const [, month, day] = value.match(/^\d{4}-(\d{2})-(\d{2})$/) ?? [];
+  if (!month || !day) return value;
+  const weekday = new Intl.DateTimeFormat("ko-KR", {
+    weekday: "short",
+    timeZone: "Asia/Seoul"
+  }).format(new Date(`${value}T00:00:00+09:00`));
+  return `${Number(month)}/${Number(day)} ${weekday}`;
+}
+
+function formatForecastHour(value: string): string {
+  const match = value.match(/T(\d{2}):/);
+  return match ? `${Number(match[1])}시` : "--시";
 }
 
 function stockDirectionLabel(stock: StockQuote): string {
@@ -423,49 +428,123 @@ function OverviewPanel({ data }: { data: DashboardData }) {
 }
 
 function WeeklyWeatherPanel({ data }: { data: DashboardData }) {
+  const days = data.weather.daily.slice(0, 7);
+
   return (
-    <PanelShell title="주간날씨" subtitle="7일 예보">
+    <section
+      style={{
+        flex: 1,
+        minWidth: 0,
+        boxSizing: "border-box",
+        padding: "3px 8px",
+        display: "flex",
+        flexDirection: "column"
+      }}
+    >
       <div
         style={{
           display: "flex",
-          gap: 9,
-          marginTop: 16,
-          flex: 1,
-          minHeight: 0
+          justifyContent: "space-between",
+          alignItems: "center",
+          height: 22,
+          borderBottom: "2px solid #111",
+          fontWeight: 900
         }}
       >
-        {data.weather.daily.length > 0 ? (
-          data.weather.daily.slice(0, 7).map((day) => (
+        <div style={{ display: "flex", fontSize: 16 }}>{data.weather.label} 7일 예보</div>
+        <div style={{ display: "flex", fontSize: 12 }}>시간대: 6시 · 12시 · 18시 · 23시</div>
+      </div>
+
+      <div style={{ display: "flex", flexDirection: "column", gap: 2, marginTop: 3 }}>
+        {days.length > 0 ? (
+          days.map((day) => (
             <div
               key={day.date}
               style={{
-                minWidth: 0,
-                flex: 1,
-                border: "2px solid #111",
-                padding: "9px 8px",
+                height: 56,
+                boxSizing: "border-box",
+                border: "1px solid #111",
+                padding: "4px 5px",
                 display: "flex",
                 alignItems: "center",
-                justifyContent: "space-between",
-                flexDirection: "column",
-                gap: 6,
-                fontWeight: 900,
-                textAlign: "center"
+                gap: 7,
+                fontWeight: 900
               }}
             >
-              <div style={{ fontSize: 14 }}>{formatForecastDate(day.date)}</div>
-              <WeatherIcon code={day.weatherCode} />
-              <div style={{ fontSize: 18, lineHeight: 1.1 }}>{day.condition}</div>
-              <div style={{ fontSize: 17 }}>
-                {`${formatTemperature(day.minTemperatureC)} / ${formatTemperature(day.maxTemperatureC)}`}
+              <div style={{ display: "flex", width: 58, flexDirection: "column" }}>
+                <div style={{ display: "flex", fontSize: 14 }}>{formatForecastShortDate(day.date)}</div>
               </div>
-              <div style={{ fontSize: 14 }}>{`비 ${formatPercent(day.precipitationProbabilityPercent)}`}</div>
+              <WeatherIcon code={day.weatherCode} size={30} />
+              <div style={{ display: "flex", width: 122, flexDirection: "column", gap: 3, minWidth: 0 }}>
+                <div
+                  style={{
+                    display: "flex",
+                    fontSize: 15,
+                    lineHeight: 1,
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis"
+                  }}
+                >
+                  {day.condition}
+                </div>
+                <div style={{ display: "flex", fontSize: 13 }}>
+                  {`${formatTemperature(day.minTemperatureC)}-${formatTemperature(day.maxTemperatureC)}`}
+                </div>
+              </div>
+              <div style={{ display: "flex", width: 72, flexDirection: "column", gap: 3 }}>
+                <div style={{ display: "flex", fontSize: 12 }}>{`강수 ${formatPercent(day.precipitationProbabilityPercent)}`}</div>
+                <div style={{ display: "flex", fontSize: 11 }}>최고확률</div>
+              </div>
+              <div style={{ display: "flex", flex: 1, gap: 4, minWidth: 0 }}>
+                {day.hourly.length > 0 ? (
+                  day.hourly.slice(0, 4).map((hour) => (
+                    <div
+                      key={hour.time}
+                      style={{
+                        flex: 1,
+                        minWidth: 0,
+                        height: 46,
+                        boxSizing: "border-box",
+                        borderLeft: "1px dashed #111",
+                        paddingLeft: 4,
+                        display: "flex",
+                        flexDirection: "column",
+                        justifyContent: "space-between"
+                      }}
+                    >
+                      <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
+                        <div style={{ display: "flex", fontSize: 11 }}>{formatForecastHour(hour.time)}</div>
+                        <WeatherIcon code={hour.weatherCode} size={13} />
+                      </div>
+                      <div style={{ display: "flex", fontSize: 13 }}>{formatTemperature(hour.temperatureC)}</div>
+                      <div style={{ display: "flex", fontSize: 10 }}>
+                        {`비 ${formatPercent(hour.precipitationProbabilityPercent)}`}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div
+                    style={{
+                      flex: 1,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      border: "1px dashed #111",
+                      fontSize: 13
+                    }}
+                  >
+                    시간대별 예보 없음
+                  </div>
+                )}
+              </div>
             </div>
           ))
         ) : (
-          <EmptyState>주간 예보 없음</EmptyState>
+          <EmptyState height={390}>주간 예보 없음</EmptyState>
         )}
       </div>
-    </PanelShell>
+    </section>
   );
 }
 

@@ -1,3 +1,12 @@
+export type HourlyForecast = {
+  time: string;
+  temperatureC: number | null;
+  precipitationProbabilityPercent: number | null;
+  weatherCode: number | null;
+  windKph: number | null;
+  condition: string;
+};
+
 export type DailyForecast = {
   date: string;
   minTemperatureC: number | null;
@@ -5,6 +14,7 @@ export type DailyForecast = {
   precipitationProbabilityPercent: number | null;
   weatherCode: number | null;
   condition: string;
+  hourly: HourlyForecast[];
 };
 
 export type WeatherSnapshot = {
