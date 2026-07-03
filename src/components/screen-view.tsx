@@ -474,9 +474,10 @@ function CalendarPanel({ data }: { data: DashboardData }) {
   const cells = monthCells(data.generatedAt);
   const weeks = chunkArray(cells, 7);
   const currentMonth = baseDate.getMonth();
-  const contentWidth = 777;
-  const dayCellWidth = 111;
-  const dayCellHeight = 68;
+  const contentWidth = SCREEN_WIDTH - 6;
+  const weekdayHeight = 18;
+  const dayCellWidth = contentWidth / 7;
+  const dayCellHeight = (SCREEN_HEIGHT - 6 - 36 - weekdayHeight) / 6;
   const eventsByDate = data.events.reduce<Record<string, CalendarEvent[]>>((acc, event) => {
     const key = eventDateKey(event);
     acc[key] = [...(acc[key] ?? []), event];
@@ -489,7 +490,7 @@ function CalendarPanel({ data }: { data: DashboardData }) {
         flex: 1,
         minWidth: 0,
         boxSizing: "border-box",
-        padding: "6px 8px",
+        padding: 0,
         display: "flex",
         flexDirection: "column"
       }}
@@ -500,10 +501,10 @@ function CalendarPanel({ data }: { data: DashboardData }) {
           flexDirection: "column",
           gap: 0,
           width: contentWidth,
-          height: 424
+          height: SCREEN_HEIGHT - 6 - 36
         }}
       >
-        <div style={{ display: "flex", gap: 0, height: 16 }}>
+        <div style={{ display: "flex", gap: 0, height: weekdayHeight }}>
           {WEEKDAY_LABELS.map((label) => (
             <div
               key={label}
@@ -526,7 +527,7 @@ function CalendarPanel({ data }: { data: DashboardData }) {
               const key = dateKey(cell);
               const dayEvents = eventsByDate[key] ?? [];
               const muted = cell.getMonth() !== currentMonth;
-              const borderColor = muted ? "#999" : "#111";
+              const borderStyle = muted ? "dashed" : "solid";
               const isFirstDayOfMonth = cell.getDate() === 1;
 
               return (
@@ -535,16 +536,15 @@ function CalendarPanel({ data }: { data: DashboardData }) {
                   style={{
                     width: dayCellWidth,
                     height: dayCellHeight,
-                    borderTop: weekIndex === 0 ? `1px solid ${borderColor}` : "0px solid transparent",
-                    borderLeft: dayIndex === 0 ? `1px solid ${borderColor}` : "0px solid transparent",
-                    borderRight: `1px solid ${borderColor}`,
-                    borderBottom: `1px solid ${borderColor}`,
+                    borderTop: weekIndex === 0 ? `1px ${borderStyle} #111` : "0px solid transparent",
+                    borderLeft: dayIndex === 0 ? `1px ${borderStyle} #111` : "0px solid transparent",
+                    borderRight: `1px ${borderStyle} #111`,
+                    borderBottom: `1px ${borderStyle} #111`,
                     boxSizing: "border-box",
                     padding: "4px 5px",
                     display: "flex",
                     flexDirection: "column",
-                    gap: 3,
-                    opacity: muted ? 0.45 : 1
+                    gap: 3
                   }}
                 >
                   <div
@@ -606,11 +606,6 @@ function CalendarPanel({ data }: { data: DashboardData }) {
           </div>
         ))}
       </div>
-      {data.notices.length > 0 ? (
-        <div style={{ marginTop: 5, fontSize: 11, fontWeight: 800, color: "#555" }}>
-          {data.notices.join(" · ")}
-        </div>
-      ) : null}
     </section>
   );
 }
