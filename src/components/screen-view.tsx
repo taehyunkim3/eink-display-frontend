@@ -26,6 +26,7 @@ export const SCREEN_PAGE_TITLES = [
   "요약",
   "주간날씨",
   "캘린더",
+  "주간일정",
   "시장지표",
   "기기상태",
   "사진"
@@ -149,6 +150,10 @@ function calendarDayLabel(date: Date): string {
   return String(date.getDate());
 }
 
+function weekDayLabel(date: Date): string {
+  return `${date.getMonth() + 1}/${date.getDate()}`;
+}
+
 function monthCells(value: string): Date[] {
   const base = new Date(value);
   const first = new Date(base.getFullYear(), base.getMonth(), 1);
@@ -160,6 +165,48 @@ function monthCells(value: string): Date[] {
     date.setDate(start.getDate() + index);
     return date;
   });
+}
+
+function weekCells(value: string): Date[] {
+  const base = new Date(value);
+  const start = new Date(base.getFullYear(), base.getMonth(), base.getDate());
+  start.setDate(start.getDate() - start.getDay());
+
+  return Array.from({ length: 7 }, (_, index) => {
+    const date = new Date(start);
+    date.setDate(start.getDate() + index);
+    return date;
+  });
+}
+
+function dayRange(date: Date): { start: Date; end: Date } {
+  const key = dateKey(date);
+  const start = new Date(`${key}T00:00:00+09:00`);
+  const end = new Date(start);
+  end.setDate(start.getDate() + 1);
+
+  return {
+    start,
+    end
+  };
+}
+
+function eventOverlapsDay(event: CalendarEvent, date: Date): boolean {
+  const { start: dayStart, end: dayEnd } = dayRange(date);
+  const eventStart = new Date(event.startsAt);
+  const eventEnd = event.endsAt ? new Date(event.endsAt) : eventStart;
+
+  if (eventEnd.getTime() === eventStart.getTime()) {
+    return eventDateKey(event) === dateKey(date);
+  }
+
+  return eventStart < dayEnd && eventEnd > dayStart;
+}
+
+function eventsForDay(events: CalendarEvent[], date: Date): CalendarEvent[] {
+  return events
+    .filter((event) => eventOverlapsDay(event, date))
+    .sort((first, second) => new Date(first.startsAt).getTime() - new Date(second.startsAt).getTime());
 }
 
 function chunkArray<T>(items: T[], size: number): T[][] {
@@ -856,6 +903,149 @@ function CalendarPanel({ data }: { data: DashboardData }) {
   );
 }
 
+function WeekCalendarPanel({ data }: { data: DashboardData }) {
+  const days = weekCells(data.generatedAt);
+  const contentWidth = SCREEN_WIDTH - 6;
+  const contentHeight = SCREEN_HEIGHT - 6 - 36;
+  const dayCellWidth = contentWidth / 7;
+  const dayCellHeight = contentHeight;
+
+  return (
+    <section
+      style={{
+        flex: 1,
+        minWidth: 0,
+        boxSizing: "border-box",
+        padding: 0,
+        display: "flex"
+      }}
+    >
+      <div
+        style={{
+          width: contentWidth,
+          height: contentHeight,
+          display: "flex",
+          gap: 0
+        }}
+      >
+        {days.map((day, dayIndex) => {
+          const dayEvents = eventsForDay(data.events, day);
+
+          return (
+            <div
+              key={dateKey(day)}
+              style={{
+                width: dayCellWidth,
+                height: dayCellHeight,
+                boxSizing: "border-box",
+                borderTop: "1px solid #111",
+                borderLeft: dayIndex === 0 ? "1px solid #111" : "0px solid transparent",
+                borderRight: "1px solid #111",
+                borderBottom: "1px solid #111",
+                display: "flex",
+                flexDirection: "column",
+                fontWeight: 900,
+                minWidth: 0
+              }}
+            >
+              <div
+                style={{
+                  height: 36,
+                  boxSizing: "border-box",
+                  borderBottom: "1px solid #111",
+                  padding: "4px 5px",
+                  display: "flex",
+                  flexDirection: "column",
+                  justifyContent: "center",
+                  gap: 2
+                }}
+              >
+                <div style={{ display: "flex", fontSize: 15, lineHeight: 1 }}>
+                  {WEEKDAY_LABELS[day.getDay()]}
+                </div>
+                <div style={{ display: "flex", fontSize: 12, lineHeight: 1 }}>
+                  {weekDayLabel(day)}
+                </div>
+              </div>
+              <div
+                style={{
+                  flex: 1,
+                  minHeight: 0,
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: 5,
+                  padding: "5px 4px"
+                }}
+              >
+                {dayEvents.length > 0 ? (
+                  dayEvents.slice(0, 7).map((event) => (
+                    <div
+                      key={`${event.uid}-${dateKey(day)}`}
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 2,
+                        minWidth: 0,
+                        borderLeft: "3px solid #111",
+                        paddingLeft: 4,
+                        paddingBottom: 4,
+                        borderBottom: "1px dashed #111",
+                        lineHeight: 1.05
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          fontSize: 11,
+                          minWidth: 0,
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis"
+                        }}
+                      >
+                        {event.title}
+                      </div>
+                      <div
+                        style={{
+                          display: "flex",
+                          fontSize: 9,
+                          color: "#555",
+                          minWidth: 0,
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis"
+                        }}
+                      >
+                        {`${calendarEventTimeLabel(event)} · ${event.calendarName ?? "캘린더"}`}
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div
+                    style={{
+                      flex: 1,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      fontSize: 12,
+                      color: "#555"
+                    }}
+                  >
+                    일정 없음
+                  </div>
+                )}
+                {dayEvents.length > 7 ? (
+                  <div style={{ display: "flex", fontSize: 11 }}>{`+${dayEvents.length - 7}`}</div>
+                ) : null}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </section>
+  );
+}
+
 function StockRow({ stock, compact = false }: { stock: StockQuote; compact?: boolean }) {
   const change = formatSignedStockValue(stock, stock.change);
   const rate = formatSignedStockValue(stock, stock.changePercent, "%");
@@ -1292,8 +1482,9 @@ function MainPanel({ page, data, deviceStatus, photoSrc }: ScreenViewProps & { p
   if (page === 0) return <OverviewPanel data={data} />;
   if (page === 1) return <WeeklyWeatherPanel data={data} />;
   if (page === 2) return <CalendarPanel data={data} />;
-  if (page === 3) return <StocksPanel data={data} />;
-  if (page === 5) return <PhotoPanel photoSrc={photoSrc ?? DEFAULT_PHOTO_SRC} />;
+  if (page === 3) return <WeekCalendarPanel data={data} />;
+  if (page === 4) return <StocksPanel data={data} />;
+  if (page === 6) return <PhotoPanel photoSrc={photoSrc ?? DEFAULT_PHOTO_SRC} />;
   return <DeviceDetails deviceStatus={deviceStatus} page={page} />;
 }
 
