@@ -93,8 +93,19 @@ async function getStockQuote(
 }
 
 export async function getStockQuotes(options: FetchFreshOptions = {}): Promise<StockQuote[]> {
-  const quotes = await Promise.all(
+  const results = await Promise.allSettled(
     stockSymbols().map(({ code, fallbackName }) => getStockQuote(code, fallbackName, options))
   );
+  const quotes = results
+    .filter((result): result is PromiseFulfilledResult<StockQuote> => result.status === "fulfilled")
+    .map((result) => result.value);
+
+  if (quotes.length === 0) {
+    const firstFailure = results.find(
+      (result): result is PromiseRejectedResult => result.status === "rejected"
+    );
+    throw firstFailure?.reason ?? new Error("Stock request failed");
+  }
+
   return quotes;
 }

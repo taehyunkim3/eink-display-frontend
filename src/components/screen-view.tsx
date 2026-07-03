@@ -45,10 +45,13 @@ function stockDirectionLabel(stock: StockQuote): string {
   return "-";
 }
 
-function stockDirectionSign(stock: StockQuote): string {
-  if (stock.direction === "up") return "+";
-  if (stock.direction === "down") return "-";
-  return "";
+function formatSignedStockValue(stock: StockQuote, value: string | null, suffix = ""): string {
+  if (!value) return "--";
+
+  const unsignedValue = value.trim().replace(/^[+-]+/, "");
+  if (stock.direction === "up") return `+${unsignedValue}${suffix}`;
+  if (stock.direction === "down") return `-${unsignedValue}${suffix}`;
+  return `${unsignedValue}${suffix}`;
 }
 
 function WifiSignal({ status }: { status: DeviceStatus }) {
@@ -352,9 +355,8 @@ function CalendarPanel({ data }: { data: DashboardData }) {
 }
 
 function StockRow({ stock, compact = false }: { stock: StockQuote; compact?: boolean }) {
-  const sign = stockDirectionSign(stock);
-  const change = stock.change ? `${sign}${stock.change}` : "--";
-  const rate = stock.changePercent ? `${sign}${stock.changePercent}%` : "--";
+  const change = formatSignedStockValue(stock, stock.change);
+  const rate = formatSignedStockValue(stock, stock.changePercent, "%");
 
   return (
     <div
