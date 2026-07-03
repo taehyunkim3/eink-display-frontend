@@ -38,11 +38,6 @@ const KOREAN_DAY = new Intl.DateTimeFormat("ko-KR", {
   weekday: "short",
   timeZone: "Asia/Seoul"
 });
-const KOREAN_MONTH = new Intl.DateTimeFormat("ko-KR", {
-  year: "numeric",
-  month: "long",
-  timeZone: "Asia/Seoul"
-});
 const KOREAN_DATE_PARTS = new Intl.DateTimeFormat("en-CA", {
   year: "numeric",
   month: "2-digit",
@@ -474,9 +469,9 @@ function CalendarPanel({ data }: { data: DashboardData }) {
   const cells = monthCells(data.generatedAt);
   const weeks = chunkArray(cells, 7);
   const currentMonth = baseDate.getMonth();
-  const contentWidth = SCREEN_WIDTH - 58;
-  const dayCellWidth = 102;
-  const dayCellHeight = 47;
+  const contentWidth = SCREEN_WIDTH - 52;
+  const dayCellWidth = 103;
+  const dayCellHeight = 60;
   const eventsByDate = data.events.reduce<Record<string, CalendarEvent[]>>((acc, event) => {
     const key = eventDateKey(event);
     acc[key] = [...(acc[key] ?? []), event];
@@ -484,32 +479,35 @@ function CalendarPanel({ data }: { data: DashboardData }) {
   }, {});
 
   return (
-    <PanelShell
-      title="캘린더"
-      subtitle={KOREAN_MONTH.format(baseDate)}
-      footer={data.notices.length > 0 ? data.notices.join(" · ") : null}
+    <section
+      style={{
+        flex: 1,
+        minWidth: 0,
+        boxSizing: "border-box",
+        padding: "12px 24px",
+        display: "flex",
+        flexDirection: "column"
+      }}
     >
       <div
         style={{
           display: "flex",
           flexDirection: "column",
-          gap: 4,
-          marginTop: 12,
+          gap: 3,
           width: contentWidth,
-          height: 332
+          height: 410
         }}
       >
-        <div style={{ display: "flex", gap: 4, height: 26 }}>
+        <div style={{ display: "flex", gap: 4, height: 18 }}>
           {WEEKDAY_LABELS.map((label) => (
             <div
               key={label}
               style={{
                 width: dayCellWidth,
-                borderBottom: "2px solid #111",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                fontSize: 15,
+                fontSize: 13,
                 fontWeight: 900
               }}
             >
@@ -531,10 +529,10 @@ function CalendarPanel({ data }: { data: DashboardData }) {
                     width: dayCellWidth,
                     height: dayCellHeight,
                     border: muted ? "1px solid #777" : "2px solid #111",
-                    padding: "3px 5px",
+                    padding: "4px 5px",
                     display: "flex",
                     flexDirection: "column",
-                    gap: 2,
+                    gap: 3,
                     opacity: muted ? 0.45 : 1
                   }}
                 >
@@ -544,18 +542,39 @@ function CalendarPanel({ data }: { data: DashboardData }) {
                       key={event.uid}
                       style={{
                         display: "flex",
-                        borderLeft: "3px solid #111",
-                        paddingLeft: 4,
+                        flexDirection: "column",
+                        borderLeft: "2px solid #111",
+                        paddingLeft: 3,
                         minWidth: 0,
-                        fontSize: 9,
                         fontWeight: 900,
-                        lineHeight: 1.1,
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis"
+                        lineHeight: 1.05
                       }}
                     >
-                      {`${calendarEventTimeLabel(event)} · ${event.calendarName ?? "캘린더"} · ${event.title}`}
+                      <div
+                        style={{
+                          display: "flex",
+                          minWidth: 0,
+                          fontSize: 10,
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis"
+                        }}
+                      >
+                        {event.title}
+                      </div>
+                      <div
+                        style={{
+                          display: "flex",
+                          minWidth: 0,
+                          fontSize: 8,
+                          color: "#555",
+                          whiteSpace: "nowrap",
+                          overflow: "hidden",
+                          textOverflow: "ellipsis"
+                        }}
+                      >
+                        {`${calendarEventTimeLabel(event)} · ${event.calendarName ?? "캘린더"}`}
+                      </div>
                     </div>
                   ))}
                   {dayEvents.length > 2 ? (
@@ -567,7 +586,12 @@ function CalendarPanel({ data }: { data: DashboardData }) {
           </div>
         ))}
       </div>
-    </PanelShell>
+      {data.notices.length > 0 ? (
+        <div style={{ marginTop: 5, fontSize: 11, fontWeight: 800, color: "#555" }}>
+          {data.notices.join(" · ")}
+        </div>
+      ) : null}
+    </section>
   );
 }
 
@@ -777,11 +801,18 @@ function DeviceDetails({
 
 function PhotoPanel({ photoSrc }: { photoSrc: string }) {
   return (
-    <PanelShell title="사진" subtitle="반려견">
+    <section
+      style={{
+        flex: 1,
+        minWidth: 0,
+        boxSizing: "border-box",
+        padding: "8px 10px",
+        display: "flex",
+        flexDirection: "column"
+      }}
+    >
       <div
         style={{
-          marginTop: 16,
-          border: "2px solid #111",
           display: "flex",
           flex: 1,
           minHeight: 0,
@@ -802,7 +833,7 @@ function PhotoPanel({ photoSrc }: { photoSrc: string }) {
           }}
         />
       </div>
-    </PanelShell>
+    </section>
   );
 }
 
@@ -882,7 +913,8 @@ export function ScreenView({ data, deviceStatus, photoSrc = DEFAULT_PHOTO_SRC }:
           >
             <div style={{ display: "flex", flexDirection: "column" }}>
               <div style={{ fontSize: 18, fontWeight: 700 }}>{data.weather.label}</div>
-              <div style={{ display: "flex", alignItems: "flex-start", marginTop: 14 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, marginTop: 14 }}>
+                <WeatherIcon code={data.weather.weatherCode} size={64} />
                 <div style={{ fontSize: 78, lineHeight: 0.9, fontWeight: 900 }}>
                   {formatTemperature(data.weather.temperatureC)}
                 </div>
