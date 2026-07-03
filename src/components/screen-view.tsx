@@ -231,6 +231,96 @@ function Sparkline({ values, width = 134, height = 38 }: { values: number[]; wid
   );
 }
 
+const MARKET_GRAPH_MIN_PERCENT_RANGE = 1;
+const MARKET_GRAPH_MAX_PERCENT_RANGE = 15;
+
+function parseMarketNumber(value: string | null): number | null {
+  if (!value) return null;
+  const parsed = Number(value.replace(/,/g, "").replace(/%/g, ""));
+  return Number.isFinite(parsed) ? parsed : null;
+}
+
+function percentSeriesForStock(stock: StockQuote): number[] {
+  const latestPrice = parseMarketNumber(stock.price);
+  const latestRate = parseMarketNumber(stock.changePercent);
+  const history = stock.history.filter((value) => Number.isFinite(value));
+  const values = [...history];
+
+  if (latestPrice !== null && values[values.length - 1] !== latestPrice) {
+    values.push(latestPrice);
+  }
+
+  const baseline =
+    latestPrice !== null && latestRate !== null && latestRate > -99
+      ? latestPrice / (1 + latestRate / 100)
+      : values[0];
+
+  if (!baseline || !Number.isFinite(baseline)) {
+    return [0, latestRate ?? 0];
+  }
+
+  const series = values.length > 0 ? values : [baseline, latestPrice ?? baseline];
+  const percentValues = series.map((value) => ((value - baseline) / baseline) * 100);
+
+  if (percentValues.length < 2) {
+    return [0, latestRate ?? percentValues[0] ?? 0];
+  }
+
+  return percentValues;
+}
+
+function marketGraphPercentRange(stock: StockQuote): number {
+  const latestRate = Math.abs(parseMarketNumber(stock.changePercent) ?? 0);
+  const padded = Math.ceil(Math.max(1, latestRate) * 1.3);
+  return Math.max(MARKET_GRAPH_MIN_PERCENT_RANGE, Math.min(MARKET_GRAPH_MAX_PERCENT_RANGE, padded));
+}
+
+function percentSparklinePoints(
+  stock: StockQuote,
+  size: number,
+  width: number,
+  height: number,
+  range: number
+) {
+  const inset = 4;
+  const values = percentSeriesForStock(stock);
+  const sampleStep = Math.max(1, Math.floor(values.length / size));
+  const sampled = values.filter((_, index) => index % sampleStep === 0).slice(-size);
+
+  return sampled.map((value, index) => {
+    const clamped = Math.max(-range, Math.min(range, value));
+    return {
+      x: Math.round(inset + (index / Math.max(1, sampled.length - 1)) * (width - inset * 2)),
+      y: Math.round(
+        height / 2 - (clamped / range) * (height / 2 - inset)
+      )
+    };
+  });
+}
+
+function PercentSparkline({ stock, width, height }: { stock: StockQuote; width: number; height: number }) {
+  const range = marketGraphPercentRange(stock);
+  const points = percentSparklinePoints(stock, Math.max(12, Math.floor(width / 2)), width, height, range);
+  const pointText = points.map((point) => `${point.x},${point.y}`).join(" ");
+  const endPoint = points[points.length - 1];
+  const lineWidth = Math.max(2, Math.round(height / 10));
+  const midY = Math.round(height / 2);
+  const imageSrc = svgDataUri(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">` +
+      `<line x1="4" y1="${midY}" x2="${width - 4}" y2="${midY}" stroke="#111" stroke-width="1" stroke-dasharray="3 3"/>` +
+      `<polyline points="${pointText}" fill="none" stroke="#111" stroke-width="${lineWidth}" stroke-linecap="round" stroke-linejoin="round"/>` +
+      `<circle cx="${endPoint.x}" cy="${endPoint.y}" r="${Math.max(2, lineWidth)}" fill="#111"/>` +
+      `</svg>`
+  );
+
+  return (
+    <div style={{ width, height, position: "relative", display: "flex", overflow: "hidden" }}>
+      {/* eslint-disable-next-line @next/next/no-img-element -- data URI SVG keeps percent-scaled market graphs stable inside next/og. */}
+      <img src={imageSrc} alt="" width={width} height={height} style={{ width, height }} />
+    </div>
+  );
+}
+
 function WifiSignal({ status }: { status: DeviceStatus }) {
   const bars = wifiSignalBars(status.rssi);
   const percent = wifiSignalPercent(status.rssi);
@@ -751,50 +841,129 @@ function StockRow({ stock, compact = false }: { stock: StockQuote; compact?: boo
   );
 }
 
-function MarketListRow({ stock }: { stock: StockQuote }) {
+function MarketTile({
+  stock,
+  height,
+  width
+}: {
+  stock: StockQuote;
+  height: number;
+  width: number;
+}) {
   const change = formatSignedStockValue(stock, stock.change);
   const rate = formatSignedStockValue(stock, stock.changePercent, "%");
+  const graphHeight = 42;
+  const graphWidth = width - 12;
+  const graphRange = marketGraphPercentRange(stock);
 
   return (
     <div
       style={{
+        width,
+        height,
+        boxSizing: "border-box",
         display: "flex",
-        alignItems: "center",
-        gap: 8,
-        width: 362,
-        paddingBottom: 5,
-        borderBottom: "1px solid #111",
+        flexDirection: "column",
+        justifyContent: "space-between",
+        padding: "5px 6px",
+        border: "1px solid #111",
         fontWeight: 900
       }}
     >
-      <div style={{ width: 118, display: "flex", flexDirection: "column" }}>
+      <div style={{ display: "flex", alignItems: "flex-start", gap: 5 }}>
         <div
           style={{
-            fontSize: 14,
-            whiteSpace: "nowrap",
-            overflow: "hidden",
-            textOverflow: "ellipsis"
+            flex: 1,
+            minWidth: 0,
+            display: "flex",
+            flexDirection: "column"
           }}
         >
-          {stock.name}
+          <div
+            style={{
+              display: "flex",
+              fontSize: 15,
+              lineHeight: 1,
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis"
+            }}
+          >
+            {stock.name}
+          </div>
+          <div style={{ display: "flex", fontSize: 10, color: "#555", lineHeight: 1.15 }}>
+            {`${stockCategoryLabel(stock)} · ${stock.code}${stock.market ? ` · ${stock.market}` : ""}`}
+          </div>
         </div>
-        <div style={{ fontSize: 10, color: "#555" }}>{stockCategoryLabel(stock)}</div>
+        <div
+          style={{
+            width: 96,
+            display: "flex",
+            justifyContent: "flex-end",
+            textAlign: "right",
+            fontSize: 18,
+            lineHeight: 1
+          }}
+        >
+          {stock.price ?? "--"}
+        </div>
       </div>
-      <div style={{ width: 68, textAlign: "right", fontSize: 14 }}>{stock.price ?? "--"}</div>
-      <Sparkline values={stock.history} width={88} height={22} />
-      <div
-        style={{
-          width: 64,
-          textAlign: "right",
-          fontSize: 11,
-          display: "flex",
-          flexDirection: "column"
-        }}
-      >
-        <span>
-          {stockDirectionLabel(stock)} {rate}
-        </span>
-        <span>{change}</span>
+      <PercentSparkline stock={stock} width={graphWidth} height={graphHeight} />
+      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-between", gap: 6 }}>
+        <div
+          style={{
+            display: "flex",
+            flexDirection: "column",
+            fontSize: 11,
+            lineHeight: 1.1
+          }}
+        >
+          <span>기준 ±{graphRange}%</span>
+          <span>점선 0%</span>
+        </div>
+        <div
+          style={{
+            textAlign: "right",
+            fontSize: 13,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "flex-end",
+            lineHeight: 1.1
+          }}
+        >
+          <span>
+            {stockDirectionLabel(stock)} {rate}
+          </span>
+          <span>{change}</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MarketScaleTile({ width, height }: { width: number; height: number }) {
+  return (
+    <div
+      style={{
+        width,
+        height,
+        boxSizing: "border-box",
+        border: "1px dashed #111",
+        padding: "9px 10px",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+        fontWeight: 900
+      }}
+    >
+      <div style={{ display: "flex", fontSize: 16 }}>그래프 기준</div>
+      <div style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 13, lineHeight: 1.1 }}>
+        <span>점선: 전일 종가 0%</span>
+        <span>상승/하락 폭은 % 기준</span>
+        <span>각 타일 변동폭에 맞춤</span>
+      </div>
+      <div style={{ display: "flex", justifyContent: "flex-end", fontSize: 18 }}>
+        개별 %
       </div>
     </div>
   );
@@ -803,36 +972,61 @@ function MarketListRow({ stock }: { stock: StockQuote }) {
 function StocksPanel({ data }: { data: DashboardData }) {
   const marketItems = data.stocks.filter((stock) => stock.category !== "equity");
   const equities = data.stocks.filter((stock) => stock.category === "equity");
-  const contentWidth = SCREEN_WIDTH - 58;
-  const columnWidth = 362;
+  const contentWidth = SCREEN_WIDTH - 6 - 6;
+  const contentHeight = SCREEN_HEIGHT - 6 - 36;
+  const columnGap = 4;
+  const rowGap = 4;
+  const tableHeight = contentHeight - 6;
+  const tileWidth = (contentWidth - columnGap * 2) / 3;
+  const tileHeight = (tableHeight - rowGap * 3) / 4;
+  const stocks = [...marketItems.slice(0, 6), ...equities.slice(0, 5)];
+  const rows = chunkArray(stocks, 3);
 
   return (
-    <PanelShell title="시장지표" subtitle="지수 · 환율 · 관심종목">
-      <div style={{ display: "flex", gap: 18, marginTop: 12, width: contentWidth, height: 312 }}>
-        {data.stocks.length > 0 ? (
-          <>
-            <div style={{ display: "flex", flexDirection: "column", gap: 5, width: columnWidth }}>
-              <div style={{ fontSize: 15, fontWeight: 900, borderBottom: "2px solid #111", paddingBottom: 4 }}>
-                주요 지표
-              </div>
-              {marketItems.slice(0, 6).map((stock) => (
-                <MarketListRow key={stock.code} stock={stock} />
-              ))}
+    <section
+      style={{
+        flex: 1,
+        minWidth: 0,
+        boxSizing: "border-box",
+        padding: "3px",
+        display: "flex",
+        flexDirection: "column"
+      }}
+    >
+      {data.stocks.length > 0 ? (
+        <div
+          style={{
+            width: contentWidth,
+            height: tableHeight,
+            display: "flex",
+            flexDirection: "column",
+            gap: rowGap
+          }}
+        >
+          {Array.from({ length: 4 }, (_, rowIndex) => (
+            <div key={rowIndex} style={{ display: "flex", gap: columnGap, height: tileHeight }}>
+              {Array.from({ length: 3 }, (_, columnIndex) => {
+                const stock = rows[rowIndex]?.[columnIndex];
+                if (!stock) {
+                  return <MarketScaleTile key="scale" width={tileWidth} height={tileHeight} />;
+                }
+
+                return (
+                  <MarketTile
+                    key={stock.code}
+                    stock={stock}
+                    width={tileWidth}
+                    height={tileHeight}
+                  />
+                );
+              })}
             </div>
-            <div style={{ display: "flex", flexDirection: "column", gap: 5, width: columnWidth }}>
-              <div style={{ fontSize: 15, fontWeight: 900, borderBottom: "2px solid #111", paddingBottom: 4 }}>
-                관심 종목
-              </div>
-              {equities.slice(0, 5).map((stock) => (
-                <MarketListRow key={stock.code} stock={stock} />
-              ))}
-            </div>
-          </>
-        ) : (
-          <EmptyState>주식 정보 없음</EmptyState>
-        )}
-      </div>
-    </PanelShell>
+          ))}
+        </div>
+      ) : (
+        <EmptyState height={392}>주식 정보 없음</EmptyState>
+      )}
+    </section>
   );
 }
 
