@@ -4,6 +4,7 @@ import { ScreenView } from "@/components/screen-view";
 import { assertDeviceAuth } from "@/lib/auth";
 import { getDashboardData } from "@/lib/dashboard";
 import { parseDeviceStatus } from "@/lib/device-status";
+import { SCREEN_HEIGHT, SCREEN_WIDTH } from "@/lib/screen";
 
 export const dynamic = "force-dynamic";
 
@@ -17,8 +18,8 @@ export async function GET(request: NextRequest) {
   return new ImageResponse(
     <ScreenView data={data} deviceStatus={deviceStatus} />,
     {
-      width: 800,
-      height: 480,
+      width: SCREEN_WIDTH,
+      height: SCREEN_HEIGHT,
       headers: {
         "Cache-Control": "private, no-store"
       }

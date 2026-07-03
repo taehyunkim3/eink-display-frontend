@@ -5,14 +5,13 @@ import { ScreenView } from "@/components/screen-view";
 import { assertDeviceAuth } from "@/lib/auth";
 import { getDashboardData } from "@/lib/dashboard";
 import { parseDeviceStatus } from "@/lib/device-status";
+import { SCREEN_HEIGHT, SCREEN_WIDTH } from "@/lib/screen";
 
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-const SCREEN_WIDTH = 800;
-const SCREEN_HEIGHT = 480;
 const BYTES_PER_ROW = SCREEN_WIDTH / 8;
-const BLACK_THRESHOLD = 180;
+const BLACK_THRESHOLD = 205;
 
 function packMonoBitmap(grayscale: Buffer) {
   const packed = Buffer.alloc(BYTES_PER_ROW * SCREEN_HEIGHT);

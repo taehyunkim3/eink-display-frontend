@@ -30,9 +30,5 @@ a {
 
 .eink-frame {
   width: min(100%, 800px);
-  aspect-ratio: 5 / 3;
-  background: #f8f6ed;
-  border: 3px solid #1a1a18;
-  color: #111;
-  overflow: hidden;
+  overflow: auto;
 }

@@ -30,6 +30,7 @@ export type DeviceStatus = {
   wifiStatus: "connected" | "offline" | "unknown";
   ssid: string | null;
   rssi: number | null;
+  page: number;
   batteryPercent: number | null;
   batteryVoltage: number | null;
 };
