@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 import { NextRequest } from "next/server";
 import sharp from "sharp";
-import { ScreenView } from "@/components/screen-view";
+import { SCREEN_PAGE_COUNT, ScreenView } from "@/components/screen-view";
 import { assertDeviceAuth } from "@/lib/auth";
 import { getDashboardData } from "@/lib/dashboard";
 import { parseDeviceStatus } from "@/lib/device-status";
@@ -12,7 +12,7 @@ export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
 const BYTES_PER_ROW = SCREEN_WIDTH / 8;
-const BLACK_THRESHOLD = 205;
+const UI_BLACK_THRESHOLD = 168;
 const BAYER_8X8 = [
   0, 48, 12, 60, 3, 51, 15, 63,
   32, 16, 44, 28, 35, 19, 47, 31,
@@ -28,13 +28,21 @@ function orderedDitherThreshold(x: number, y: number) {
   return 72 + BAYER_8X8[(y & 7) * 8 + (x & 7)] * 2;
 }
 
+function normalizePage(page: number) {
+  return ((page % SCREEN_PAGE_COUNT) + SCREEN_PAGE_COUNT) % SCREEN_PAGE_COUNT;
+}
+
+function isPhotoPage(page: number) {
+  return normalizePage(page) === SCREEN_PAGE_COUNT - 1;
+}
+
 function packMonoBitmap(grayscale: Buffer, dither: boolean) {
   const packed = Buffer.alloc(BYTES_PER_ROW * SCREEN_HEIGHT);
 
   for (let y = 0; y < SCREEN_HEIGHT; y++) {
     for (let x = 0; x < SCREEN_WIDTH; x++) {
       const luminance = grayscale[y * SCREEN_WIDTH + x];
-      const threshold = dither ? orderedDitherThreshold(x, y) : BLACK_THRESHOLD;
+      const threshold = dither ? orderedDitherThreshold(x, y) : UI_BLACK_THRESHOLD;
       if (luminance < threshold) {
         packed[y * BYTES_PER_ROW + (x >> 3)] |= 0x80 >> (x & 7);
       }
@@ -52,7 +60,7 @@ export async function GET(request: NextRequest) {
   const data = await getDashboardData({ forceRefresh });
   const deviceStatus = parseDeviceStatus(request.nextUrl.searchParams);
   const photoSrc = await getHomePhotoSrc();
-  const ditherPhoto = deviceStatus.page === 5;
+  const ditherPhoto = isPhotoPage(deviceStatus.page);
   const png = new ImageResponse(
     <ScreenView data={data} deviceStatus={deviceStatus} photoSrc={photoSrc} />,
     {
@@ -63,7 +71,12 @@ export async function GET(request: NextRequest) {
 
   const pngBuffer = Buffer.from(await png.arrayBuffer());
   const image = sharp(pngBuffer).flatten({ background: "#ffffff" }).grayscale();
-  const grayscale = await (ditherPhoto ? image.linear(1.12, 18) : image).raw().toBuffer();
+  const grayscale = await (ditherPhoto
+    ? image.linear(1.12, 18)
+    : image.linear(1.42, -32).sharpen()
+  )
+    .raw()
+    .toBuffer();
   const bitmap = packMonoBitmap(grayscale, ditherPhoto);
 
   return new Response(bitmap, {
