@@ -545,7 +545,7 @@ function WeeklyWeatherPanel({ data }: { data: DashboardData }) {
           justifyContent: "space-between",
           alignItems: "center",
           height: 22,
-          borderBottom: "2px solid #111",
+          borderBottom: "1px solid #111",
           fontWeight: 900
         }}
       >
@@ -553,15 +553,18 @@ function WeeklyWeatherPanel({ data }: { data: DashboardData }) {
         <div style={{ display: "flex", fontSize: 12 }}>시간대: 6시 · 12시 · 18시 · 23시</div>
       </div>
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 2, marginTop: 3 }}>
+      <div style={{ display: "flex", flexDirection: "column", gap: 0, marginTop: 0 }}>
         {days.length > 0 ? (
           days.map((day) => (
             <div
               key={day.date}
               style={{
-                height: 56,
+                height: 59,
                 boxSizing: "border-box",
-                border: "1px solid #111",
+                borderTop: "0px solid transparent",
+                borderLeft: "1px solid #111",
+                borderRight: "1px solid #111",
+                borderBottom: "1px solid #111",
                 padding: "4px 5px",
                 display: "flex",
                 alignItems: "center",
@@ -852,11 +855,15 @@ function StockRow({ stock, compact = false }: { stock: StockQuote; compact?: boo
 function MarketTile({
   stock,
   height,
-  width
+  width,
+  rowIndex,
+  columnIndex
 }: {
   stock: StockQuote;
   height: number;
   width: number;
+  rowIndex: number;
+  columnIndex: number;
 }) {
   const change = formatSignedStockValue(stock, stock.change);
   const rate = formatSignedStockValue(stock, stock.changePercent, "%");
@@ -873,7 +880,10 @@ function MarketTile({
         flexDirection: "column",
         justifyContent: "space-between",
         padding: "5px 6px",
-        border: "1px solid #111",
+        borderTop: rowIndex === 0 ? "1px solid #111" : "0px solid transparent",
+        borderLeft: columnIndex === 0 ? "1px solid #111" : "0px solid transparent",
+        borderRight: "1px solid #111",
+        borderBottom: "1px solid #111",
         fontWeight: 900
       }}
     >
@@ -938,14 +948,27 @@ function MarketTile({
   );
 }
 
-function MarketScaleTile({ width, height }: { width: number; height: number }) {
+function MarketScaleTile({
+  width,
+  height,
+  rowIndex,
+  columnIndex
+}: {
+  width: number;
+  height: number;
+  rowIndex: number;
+  columnIndex: number;
+}) {
   return (
     <div
       style={{
         width,
         height,
         boxSizing: "border-box",
-        border: "1px dashed #111",
+        borderTop: rowIndex === 0 ? "1px dashed #111" : "0px solid transparent",
+        borderLeft: columnIndex === 0 ? "1px dashed #111" : "0px solid transparent",
+        borderRight: "1px dashed #111",
+        borderBottom: "1px dashed #111",
         padding: "9px 10px",
         display: "flex",
         flexDirection: "column",
@@ -971,8 +994,8 @@ function StocksPanel({ data }: { data: DashboardData }) {
   const equities = data.stocks.filter((stock) => stock.category === "equity");
   const contentWidth = SCREEN_WIDTH - 6 - 6;
   const contentHeight = SCREEN_HEIGHT - 6 - 36;
-  const columnGap = 4;
-  const rowGap = 4;
+  const columnGap = 0;
+  const rowGap = 0;
   const tableHeight = contentHeight - 6;
   const tileWidth = (contentWidth - columnGap * 2) / 3;
   const tileHeight = (tableHeight - rowGap * 3) / 4;
@@ -1005,7 +1028,15 @@ function StocksPanel({ data }: { data: DashboardData }) {
               {Array.from({ length: 3 }, (_, columnIndex) => {
                 const stock = rows[rowIndex]?.[columnIndex];
                 if (!stock) {
-                  return <MarketScaleTile key="scale" width={tileWidth} height={tileHeight} />;
+                  return (
+                    <MarketScaleTile
+                      key="scale"
+                      width={tileWidth}
+                      height={tileHeight}
+                      rowIndex={rowIndex}
+                      columnIndex={columnIndex}
+                    />
+                  );
                 }
 
                 return (
@@ -1014,6 +1045,8 @@ function StocksPanel({ data }: { data: DashboardData }) {
                     stock={stock}
                     width={tileWidth}
                     height={tileHeight}
+                    rowIndex={rowIndex}
+                    columnIndex={columnIndex}
                   />
                 );
               })}
