@@ -400,11 +400,12 @@ function WeatherIcon({ code, size = 58 }: { code: number | null; size?: number }
 
 function sparklinePoints(values: number[], size: number, width: number, height: number) {
   const validValues = values.filter((value) => Number.isFinite(value));
+  const inset = 3;
 
   if (validValues.length < 2) {
     return [
-      { x: 0, y: Math.floor(height / 2) },
-      { x: width, y: Math.floor(height / 2) }
+      { x: inset, y: Math.floor(height / 2) },
+      { x: width - inset, y: Math.floor(height / 2) }
     ];
   }
 
@@ -415,25 +416,26 @@ function sparklinePoints(values: number[], size: number, width: number, height: 
   const range = max - min || 1;
 
   return sampled.map((value, index) => ({
-    x: Math.round((index / Math.max(1, sampled.length - 1)) * width),
-    y: Math.round(height - 2 - ((value - min) / range) * (height - 4))
+    x: Math.round(inset + (index / Math.max(1, sampled.length - 1)) * (width - inset * 2)),
+    y: Math.round(height - inset - ((value - min) / range) * (height - inset * 2))
   }));
 }
 
-function Sparkline({ values, width = 134, height = 38 }: { values: number[]; width?: number; height?: number }) {
-  const points = sparklinePoints(values, Math.max(6, Math.floor(width / 8)), width, height);
-  const segments = points.slice(0, -1).map((point, index) => {
-    const next = points[index + 1];
-    const dx = next.x - point.x;
-    const dy = next.y - point.y;
+function svgDataUri(svg: string) {
+  return `data:image/svg+xml;utf8,${encodeURIComponent(svg)}`;
+}
 
-    return {
-      x: point.x,
-      y: point.y,
-      length: Math.max(2, Math.sqrt(dx * dx + dy * dy)),
-      angle: (Math.atan2(dy, dx) * 180) / Math.PI
-    };
-  });
+function Sparkline({ values, width = 134, height = 38 }: { values: number[]; width?: number; height?: number }) {
+  const points = sparklinePoints(values, Math.max(10, Math.floor(width / 4)), width, height);
+  const pointText = points.map((point) => `${point.x},${point.y}`).join(" ");
+  const endPoint = points[points.length - 1];
+  const lineWidth = Math.max(2, Math.round(height / 8));
+  const imageSrc = svgDataUri(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">` +
+      `<polyline points="${pointText}" fill="none" stroke="#111" stroke-width="${lineWidth}" stroke-linecap="round" stroke-linejoin="round"/>` +
+      `<circle cx="${endPoint.x}" cy="${endPoint.y}" r="${Math.max(2, lineWidth)}" fill="#111"/>` +
+      `</svg>`
+  );
 
   return (
     <div
@@ -445,21 +447,8 @@ function Sparkline({ values, width = 134, height = 38 }: { values: number[]; wid
         overflow: "hidden"
       }}
     >
-      {segments.map((segment, index) => (
-        <div
-          key={index}
-          style={{
-            position: "absolute",
-            left: segment.x,
-            top: segment.y,
-            width: segment.length,
-            height: 2,
-            background: "#111",
-            transform: `rotate(${segment.angle}deg)`,
-            transformOrigin: "0 1px"
-          }}
-        />
-      ))}
+      {/* eslint-disable-next-line @next/next/no-img-element -- data URI SVG keeps sparklines continuous inside next/og ImageResponse. */}
+      <img src={imageSrc} alt="" width={width} height={height} style={{ width, height }} />
     </div>
   );
 }
