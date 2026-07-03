@@ -1,4 +1,5 @@
 import { getDashboardData } from "@/lib/dashboard";
+import { formatBatteryStatus, formatWifiStatus, previewDeviceStatus } from "@/lib/device-status";
 import {
   formatEventTime,
   formatGeneratedAt,
@@ -11,6 +12,7 @@ export const dynamic = "force-dynamic";
 
 export default async function PreviewPage() {
   const data = await getDashboardData();
+  const deviceStatus = previewDeviceStatus();
 
   return (
     <main className="min-h-screen px-4 py-6 md:px-8">
@@ -28,36 +30,49 @@ export default async function PreviewPage() {
         </header>
 
         <section className="eink-frame">
-          <div className="grid h-full grid-cols-[310px_1fr] gap-0">
-            <section className="border-r-2 border-neutral-950 p-7">
+          <div className="flex h-full flex-col">
+            <header className="flex h-9 shrink-0 items-center justify-between border-b-2 border-neutral-950 px-6 text-[15px] font-extrabold">
+              <div className="flex items-center gap-2">
+                <span>ESP32 E-INK</span>
+                <span>|</span>
+                <span>{formatGeneratedAt(data.generatedAt)}</span>
+              </div>
+              <div className="flex items-center gap-5">
+                <span>{formatWifiStatus(deviceStatus)}</span>
+                <span>{formatBatteryStatus(deviceStatus)}</span>
+              </div>
+            </header>
+
+            <div className="grid min-h-0 flex-1 grid-cols-[310px_1fr] gap-0">
+            <section className="border-r-2 border-neutral-950 px-7 py-6">
               <div className="flex h-full flex-col justify-between">
                 <div>
                   <p className="text-lg font-bold">{data.weather.label}</p>
-                  <div className="mt-5 flex items-start gap-3">
-                    <p className="text-8xl font-black leading-none">
+                  <div className="mt-4 flex items-start gap-3">
+                    <p className="text-[84px] font-black leading-none">
                       {formatTemperature(data.weather.temperatureC)}
                     </p>
                   </div>
-                  <p className="mt-2 text-3xl font-bold">{data.weather.condition}</p>
+                  <p className="mt-2 text-[28px] font-bold">{data.weather.condition}</p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3 text-lg font-semibold">
-                  <div className="border-t-2 border-neutral-950 pt-3">
+                <div className="grid grid-cols-2 gap-3 text-base font-semibold">
+                  <div className="border-t-2 border-neutral-950 pt-2">
                     체감
                     <br />
                     {formatTemperature(data.weather.apparentTemperatureC)}
                   </div>
-                  <div className="border-t-2 border-neutral-950 pt-3">
+                  <div className="border-t-2 border-neutral-950 pt-2">
                     습도
                     <br />
                     {formatPercent(data.weather.humidityPercent)}
                   </div>
-                  <div className="border-t-2 border-neutral-950 pt-3">
+                  <div className="border-t-2 border-neutral-950 pt-2">
                     바람
                     <br />
                     {formatWind(data.weather.windKph)}
                   </div>
-                  <div className="border-t-2 border-neutral-950 pt-3">
+                  <div className="border-t-2 border-neutral-950 pt-2">
                     갱신
                     <br />
                     {formatGeneratedAt(data.generatedAt)}
@@ -66,20 +81,20 @@ export default async function PreviewPage() {
               </div>
             </section>
 
-            <section className="p-7">
+            <section className="px-7 py-6">
               <div className="flex h-full flex-col">
-                <div className="mb-5 flex items-center justify-between border-b-2 border-neutral-950 pb-3">
-                  <h2 className="text-3xl font-black">Calendar</h2>
+                <div className="mb-4 flex items-center justify-between border-b-2 border-neutral-950 pb-3">
+                  <h2 className="text-[32px] font-black">Calendar</h2>
                   <p className="text-base font-bold">Next 7 days</p>
                 </div>
 
-                <div className="flex flex-1 flex-col gap-3">
+                <div className="flex flex-1 flex-col gap-2">
                   {data.events.length > 0 ? (
-                    data.events.map((event) => (
+                    data.events.slice(0, 6).map((event) => (
                       <div key={event.uid} className="grid grid-cols-[132px_1fr] gap-4 border-b border-neutral-950 pb-2">
                         <p className="text-base font-bold">{formatEventTime(event)}</p>
                         <div>
-                          <p className="line-clamp-1 text-xl font-black">{event.title}</p>
+                          <p className="line-clamp-1 text-[20px] font-black">{event.title}</p>
                           {event.location ? (
                             <p className="line-clamp-1 text-sm font-semibold text-neutral-600">
                               {event.location}
@@ -102,6 +117,7 @@ export default async function PreviewPage() {
                 ) : null}
               </div>
             </section>
+            </div>
           </div>
         </section>
 

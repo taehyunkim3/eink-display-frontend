@@ -25,3 +25,11 @@ export type DashboardData = {
   events: CalendarEvent[];
   notices: string[];
 };
+
+export type DeviceStatus = {
+  wifiStatus: "connected" | "offline" | "unknown";
+  ssid: string | null;
+  rssi: number | null;
+  batteryPercent: number | null;
+  batteryVoltage: number | null;
+};

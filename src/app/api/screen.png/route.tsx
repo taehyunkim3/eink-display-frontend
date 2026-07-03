@@ -2,6 +2,7 @@ import { ImageResponse } from "next/og";
 import { NextRequest } from "next/server";
 import { assertDeviceAuth } from "@/lib/auth";
 import { getDashboardData } from "@/lib/dashboard";
+import { formatBatteryStatus, formatWifiStatus, parseDeviceStatus } from "@/lib/device-status";
 import {
   formatEventTime,
   formatGeneratedAt,
@@ -17,6 +18,7 @@ export async function GET(request: NextRequest) {
   if (authError) return authError;
 
   const data = await getDashboardData();
+  const deviceStatus = parseDeviceStatus(request.nextUrl.searchParams);
 
   return new ImageResponse(
     (
@@ -25,142 +27,168 @@ export async function GET(request: NextRequest) {
           width: "800px",
           height: "480px",
           display: "flex",
+          flexDirection: "column",
           background: "#f8f6ed",
           color: "#111",
           fontFamily: "Arial",
           border: "3px solid #111"
         }}
       >
-        <section
+        <header
           style={{
-            width: "310px",
-            height: "474px",
-            padding: "28px",
+            height: "36px",
+            padding: "0 24px",
             display: "flex",
-            flexDirection: "column",
+            alignItems: "center",
             justifyContent: "space-between",
-            borderRight: "2px solid #111"
+            borderBottom: "2px solid #111",
+            fontSize: 15,
+            fontWeight: 800
           }}
         >
-          <div style={{ display: "flex", flexDirection: "column" }}>
-            <div style={{ fontSize: 18, fontWeight: 700 }}>{data.weather.label}</div>
-            <div style={{ display: "flex", alignItems: "flex-start", marginTop: 18 }}>
-              <div style={{ fontSize: 92, lineHeight: 0.9, fontWeight: 900 }}>
-                {formatTemperature(data.weather.temperatureC)}
-              </div>
-            </div>
-            <div style={{ marginTop: 10, fontSize: 30, fontWeight: 800 }}>
-              {data.weather.condition}
-            </div>
+          <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
+            <span>ESP32 E-INK</span>
+            <span style={{ fontWeight: 700 }}>|</span>
+            <span>{formatGeneratedAt(data.generatedAt)}</span>
           </div>
-
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 14 }}>
-            {[
-              ["체감", formatTemperature(data.weather.apparentTemperatureC)],
-              ["습도", formatPercent(data.weather.humidityPercent)],
-              ["바람", formatWind(data.weather.windKph)],
-              ["갱신", formatGeneratedAt(data.generatedAt)]
-            ].map(([label, value]) => (
-              <div
-                key={label}
-                style={{
-                  width: "116px",
-                  paddingTop: 10,
-                  borderTop: "2px solid #111",
-                  display: "flex",
-                  flexDirection: "column",
-                  fontSize: 17,
-                  fontWeight: 700
-                }}
-              >
-                <span>{label}</span>
-                <span>{value}</span>
-              </div>
-            ))}
+          <div style={{ display: "flex", gap: 18, alignItems: "center" }}>
+            <span>{formatWifiStatus(deviceStatus)}</span>
+            <span>{formatBatteryStatus(deviceStatus)}</span>
           </div>
-        </section>
+        </header>
 
-        <section
-          style={{
-            width: "484px",
-            height: "474px",
-            padding: "28px",
-            display: "flex",
-            flexDirection: "column"
-          }}
-        >
-          <div
+        <main style={{ display: "flex", height: "438px" }}>
+          <section
             style={{
+              width: "310px",
+              height: "438px",
+              padding: "24px 28px",
               display: "flex",
+              flexDirection: "column",
               justifyContent: "space-between",
-              alignItems: "center",
-              paddingBottom: 12,
-              borderBottom: "2px solid #111"
+              borderRight: "2px solid #111"
             }}
           >
-            <div style={{ fontSize: 34, fontWeight: 900 }}>Calendar</div>
-            <div style={{ fontSize: 16, fontWeight: 700 }}>Next 7 days</div>
-          </div>
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              <div style={{ fontSize: 18, fontWeight: 700 }}>{data.weather.label}</div>
+              <div style={{ display: "flex", alignItems: "flex-start", marginTop: 16 }}>
+                <div style={{ fontSize: 84, lineHeight: 0.9, fontWeight: 900 }}>
+                  {formatTemperature(data.weather.temperatureC)}
+                </div>
+              </div>
+              <div style={{ marginTop: 10, fontSize: 28, fontWeight: 800 }}>
+                {data.weather.condition}
+              </div>
+            </div>
 
-          <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 18 }}>
-            {data.events.length > 0 ? (
-              data.events.slice(0, 6).map((event) => (
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+              {[
+                ["체감", formatTemperature(data.weather.apparentTemperatureC)],
+                ["습도", formatPercent(data.weather.humidityPercent)],
+                ["바람", formatWind(data.weather.windKph)],
+                ["갱신", formatGeneratedAt(data.generatedAt)]
+              ].map(([label, value]) => (
                 <div
-                  key={event.uid}
+                  key={label}
                   style={{
+                    width: "116px",
+                    paddingTop: 9,
+                    borderTop: "2px solid #111",
                     display: "flex",
-                    gap: 16,
-                    paddingBottom: 8,
-                    borderBottom: "1px solid #111"
+                    flexDirection: "column",
+                    fontSize: 16,
+                    fontWeight: 700
                   }}
                 >
-                  <div style={{ width: 132, fontSize: 15, fontWeight: 700 }}>
-                    {formatEventTime(event)}
-                  </div>
-                  <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
-                    <div style={{ fontSize: 21, fontWeight: 900, whiteSpace: "nowrap", overflow: "hidden" }}>
-                      {event.title}
-                    </div>
-                    {event.location ? (
-                      <div style={{ fontSize: 13, fontWeight: 700, color: "#555" }}>
-                        {event.location}
-                      </div>
-                    ) : null}
-                  </div>
+                  <span>{label}</span>
+                  <span>{value}</span>
                 </div>
-              ))
-            ) : (
-              <div
-                style={{
-                  height: 278,
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                  border: "2px dashed #111",
-                  fontSize: 22,
-                  fontWeight: 800
-                }}
-              >
-                표시할 일정 없음
-              </div>
-            )}
-          </div>
+              ))}
+            </div>
+          </section>
 
-          {data.notices.length > 0 ? (
+          <section
+            style={{
+              width: "484px",
+              height: "438px",
+              padding: "24px 28px",
+              display: "flex",
+              flexDirection: "column"
+            }}
+          >
             <div
               style={{
-                marginTop: "auto",
-                fontSize: 13,
-                fontWeight: 700,
-                color: "#555",
-                whiteSpace: "nowrap",
-                overflow: "hidden"
+                display: "flex",
+                justifyContent: "space-between",
+                alignItems: "center",
+                paddingBottom: 12,
+                borderBottom: "2px solid #111"
               }}
             >
-              {data.notices.join(" · ")}
+              <div style={{ fontSize: 32, fontWeight: 900 }}>Calendar</div>
+              <div style={{ fontSize: 16, fontWeight: 700 }}>Next 7 days</div>
             </div>
-          ) : null}
-        </section>
+
+            <div style={{ display: "flex", flexDirection: "column", gap: 8, marginTop: 16 }}>
+              {data.events.length > 0 ? (
+                data.events.slice(0, 6).map((event) => (
+                  <div
+                    key={event.uid}
+                    style={{
+                      display: "flex",
+                      gap: 16,
+                      paddingBottom: 8,
+                      borderBottom: "1px solid #111"
+                    }}
+                  >
+                    <div style={{ width: 132, fontSize: 15, fontWeight: 700 }}>
+                      {formatEventTime(event)}
+                    </div>
+                    <div style={{ display: "flex", flexDirection: "column", flex: 1 }}>
+                      <div style={{ fontSize: 20, fontWeight: 900, whiteSpace: "nowrap", overflow: "hidden" }}>
+                        {event.title}
+                      </div>
+                      {event.location ? (
+                        <div style={{ fontSize: 13, fontWeight: 700, color: "#555" }}>
+                          {event.location}
+                        </div>
+                      ) : null}
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div
+                  style={{
+                    height: 250,
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    border: "2px dashed #111",
+                    fontSize: 22,
+                    fontWeight: 800
+                  }}
+                >
+                  표시할 일정 없음
+                </div>
+              )}
+            </div>
+
+            {data.notices.length > 0 ? (
+              <div
+                style={{
+                  marginTop: "auto",
+                  fontSize: 13,
+                  fontWeight: 700,
+                  color: "#555",
+                  whiteSpace: "nowrap",
+                  overflow: "hidden"
+                }}
+              >
+                {data.notices.join(" · ")}
+              </div>
+            ) : null}
+          </section>
+        </main>
       </div>
     ),
     {
