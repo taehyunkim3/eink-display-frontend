@@ -204,7 +204,7 @@ function Sparkline({ values, width = 134, height = 38 }: { values: number[]; wid
   const midY = Math.round(height / 2);
   const imageSrc = svgDataUri(
     `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">` +
-      `<line x1="3" y1="${midY}" x2="${width - 3}" y2="${midY}" stroke="#111" stroke-width="1" stroke-opacity="0.28" stroke-dasharray="3 4"/>` +
+      `<line x1="3" y1="${midY}" x2="${width - 3}" y2="${midY}" stroke="#111" stroke-width="1" stroke-dasharray="3 3"/>` +
       `<polyline points="${pointText}" fill="none" stroke="#111" stroke-width="${lineWidth}" stroke-linecap="round" stroke-linejoin="round"/>` +
       `<circle cx="${endPoint.x}" cy="${endPoint.y}" r="${Math.max(2, lineWidth)}" fill="#111"/>` +
       `</svg>`
