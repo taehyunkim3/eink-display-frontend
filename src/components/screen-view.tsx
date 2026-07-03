@@ -167,10 +167,15 @@ function WeatherIcon({ code, size = 58 }: { code: number | null; size?: number }
   );
 }
 
-function sparklineBars(values: number[], size: number, height: number) {
+function sparklinePoints(values: number[], size: number, width: number, height: number) {
   const validValues = values.filter((value) => Number.isFinite(value));
 
-  if (validValues.length < 2) return Array.from({ length: size }, () => Math.max(2, Math.floor(height * 0.35)));
+  if (validValues.length < 2) {
+    return [
+      { x: 0, y: Math.floor(height / 2) },
+      { x: width, y: Math.floor(height / 2) }
+    ];
+  }
 
   const sampleStep = Math.max(1, Math.floor(validValues.length / size));
   const sampled = validValues.filter((_, index) => index % sampleStep === 0).slice(-size);
@@ -178,32 +183,49 @@ function sparklineBars(values: number[], size: number, height: number) {
   const max = Math.max(...sampled);
   const range = max - min || 1;
 
-  return sampled.map((value) => Math.max(2, Math.round(3 + ((value - min) / range) * (height - 5))));
+  return sampled.map((value, index) => ({
+    x: Math.round((index / Math.max(1, sampled.length - 1)) * width),
+    y: Math.round(height - 2 - ((value - min) / range) * (height - 4))
+  }));
 }
 
 function Sparkline({ values, width = 134, height = 38 }: { values: number[]; width?: number; height?: number }) {
-  const bars = sparklineBars(values, Math.max(6, Math.floor(width / 7)), height);
-  const barWidth = Math.max(2, Math.floor((width - bars.length + 1) / bars.length));
+  const points = sparklinePoints(values, Math.max(6, Math.floor(width / 8)), width, height);
+  const segments = points.slice(0, -1).map((point, index) => {
+    const next = points[index + 1];
+    const dx = next.x - point.x;
+    const dy = next.y - point.y;
+
+    return {
+      x: point.x,
+      y: point.y,
+      length: Math.max(2, Math.sqrt(dx * dx + dy * dy)),
+      angle: (Math.atan2(dy, dx) * 180) / Math.PI
+    };
+  });
 
   return (
     <div
       style={{
         width,
         height,
+        position: "relative",
         display: "flex",
-        alignItems: "flex-end",
-        justifyContent: "flex-end",
-        gap: 1,
         overflow: "hidden"
       }}
     >
-      {bars.map((barHeight, index) => (
+      {segments.map((segment, index) => (
         <div
           key={index}
           style={{
-            width: barWidth,
-            height: barHeight,
-            background: "#111"
+            position: "absolute",
+            left: segment.x,
+            top: segment.y,
+            width: segment.length,
+            height: 2,
+            background: "#111",
+            transform: `rotate(${segment.angle}deg)`,
+            transformOrigin: "0 1px"
           }}
         />
       ))}
