@@ -290,34 +290,60 @@ function percentSparklinePoints(
   return sampled.map((value, index) => {
     const clamped = Math.max(-range, Math.min(range, value));
     return {
-      x: Math.round(inset + (index / Math.max(1, sampled.length - 1)) * (width - inset * 2)),
-      y: Math.round(
-        height / 2 - (clamped / range) * (height / 2 - inset)
-      )
+      x: inset + (index / Math.max(1, sampled.length - 1)) * (width - inset * 2),
+      y: height / 2 - (clamped / range) * (height / 2 - inset)
     };
   });
+}
+
+function svgNumber(value: number): string {
+  return Number(value.toFixed(1)).toString();
+}
+
+function smoothSvgPath(points: Array<{ x: number; y: number }>): string {
+  if (points.length === 0) return "";
+  if (points.length === 1) return `M ${svgNumber(points[0].x)} ${svgNumber(points[0].y)}`;
+
+  const segments = [`M ${svgNumber(points[0].x)} ${svgNumber(points[0].y)}`];
+
+  for (let index = 0; index < points.length - 1; index += 1) {
+    const p0 = points[Math.max(0, index - 1)];
+    const p1 = points[index];
+    const p2 = points[index + 1];
+    const p3 = points[Math.min(points.length - 1, index + 2)];
+    const cp1x = p1.x + (p2.x - p0.x) / 6;
+    const cp1y = p1.y + (p2.y - p0.y) / 6;
+    const cp2x = p2.x - (p3.x - p1.x) / 6;
+    const cp2y = p2.y - (p3.y - p1.y) / 6;
+
+    segments.push(
+      `C ${svgNumber(cp1x)} ${svgNumber(cp1y)} ${svgNumber(cp2x)} ${svgNumber(cp2y)} ${svgNumber(p2.x)} ${svgNumber(p2.y)}`
+    );
+  }
+
+  return segments.join(" ");
 }
 
 function PercentSparkline({ stock, width, height }: { stock: StockQuote; width: number; height: number }) {
   const range = marketGraphPercentRange(stock);
   const points = percentSparklinePoints(stock, Math.max(12, Math.floor(width / 2)), width, height, range);
-  const pointText = points.map((point) => `${point.x},${point.y}`).join(" ");
+  const path = smoothSvgPath(points);
   const endPoint = points[points.length - 1];
-  const lineWidth = Math.max(2, Math.round(height / 18));
+  const lineWidth = 1.45;
   const midY = Math.round(height / 2);
   const upperY = Math.round(height / 4);
   const lowerY = Math.round((height / 4) * 3);
   const firstThirdX = Math.round(width / 3);
   const secondThirdX = Math.round((width / 3) * 2);
   const imageSrc = svgDataUri(
-    `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">` +
-      `<line x1="4" y1="${upperY}" x2="${width - 4}" y2="${upperY}" stroke="#111" stroke-width="1" stroke-dasharray="2 4"/>` +
-      `<line x1="4" y1="${lowerY}" x2="${width - 4}" y2="${lowerY}" stroke="#111" stroke-width="1" stroke-dasharray="2 4"/>` +
-      `<line x1="${firstThirdX}" y1="3" x2="${firstThirdX}" y2="${height - 3}" stroke="#111" stroke-width="1" stroke-dasharray="2 5"/>` +
-      `<line x1="${secondThirdX}" y1="3" x2="${secondThirdX}" y2="${height - 3}" stroke="#111" stroke-width="1" stroke-dasharray="2 5"/>` +
-      `<line x1="4" y1="${midY}" x2="${width - 4}" y2="${midY}" stroke="#111" stroke-width="1" stroke-dasharray="4 3"/>` +
-      `<polyline points="${pointText}" fill="none" stroke="#111" stroke-width="${lineWidth}" stroke-linecap="round" stroke-linejoin="round"/>` +
-      `<circle cx="${endPoint.x}" cy="${endPoint.y}" r="${Math.max(2, lineWidth)}" fill="#111"/>` +
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" shape-rendering="geometricPrecision">` +
+      `<line x1="4" y1="${upperY}" x2="${width - 4}" y2="${upperY}" stroke="#111" stroke-width="0.7" stroke-dasharray="1 5"/>` +
+      `<line x1="4" y1="${lowerY}" x2="${width - 4}" y2="${lowerY}" stroke="#111" stroke-width="0.7" stroke-dasharray="1 5"/>` +
+      `<line x1="${firstThirdX}" y1="3" x2="${firstThirdX}" y2="${height - 3}" stroke="#111" stroke-width="0.7" stroke-dasharray="1 6"/>` +
+      `<line x1="${secondThirdX}" y1="3" x2="${secondThirdX}" y2="${height - 3}" stroke="#111" stroke-width="0.7" stroke-dasharray="1 6"/>` +
+      `<line x1="4" y1="${midY}" x2="${width - 4}" y2="${midY}" stroke="#111" stroke-width="0.9" stroke-dasharray="3 4"/>` +
+      `<path d="${path}" fill="none" stroke="#111" stroke-width="${lineWidth}" stroke-linecap="round" stroke-linejoin="round"/>` +
+      `<circle cx="${svgNumber(endPoint.x)}" cy="${svgNumber(endPoint.y)}" r="1.5" fill="#111"/>` +
       `</svg>`
   );
 
