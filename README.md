@@ -30,11 +30,25 @@ GET /api/screen.png?token=your-token
 
 ## Google Calendar
 
-Google Calendar 설정에서 비공개 iCal URL을 복사해 `GOOGLE_CALENDAR_ICAL_URL`에 넣으면 됩니다. 이 앱은 서버에서 `.ics`를 가져와 오늘부터 7일간의 일정을 표시합니다.
+Google Calendar 설정에서 비공개 iCal URL을 복사해 `GOOGLE_CALENDAR_ICAL_URLS`에 JSON 배열 문자열로 넣으면 됩니다. 이 앱은 서버에서 각 `.ics`를 가져와 합친 뒤 오늘부터 7일간의 일정을 표시합니다.
+
+```env
+GOOGLE_CALENDAR_ICAL_URLS='["https://calendar.google.com/calendar/ical/.../basic.ics","https://calendar.google.com/calendar/ical/.../basic.ics"]'
+```
+
+기존 단일 설정인 `GOOGLE_CALENDAR_ICAL_URL`도 계속 지원합니다.
 
 ## Weather
 
 Open-Meteo를 사용합니다. `WEATHER_LATITUDE`, `WEATHER_LONGITUDE`, `WEATHER_TIMEZONE`, `WEATHER_LABEL`만 설정하면 됩니다.
+
+## Market
+
+국내 종목은 네이버 금융, WTI 유가는 Yahoo Finance를 사용합니다. `STOCK_SYMBOLS`를 설정하지 않으면 삼성전자, SK하이닉스, 제주반도체, 디앤디파마텍, LG이노텍, WTI 유가(달러)를 표시합니다.
+
+```env
+STOCK_SYMBOLS="KRX:005930:삼성전자,KRX:000660:SK하이닉스,KRX:080220:제주반도체,KRX:347850:디앤디파마텍,KRX:011070:LG이노텍,YAHOO:CL=F:WTI 유가(달러)"
+```
 
 ## Local
 

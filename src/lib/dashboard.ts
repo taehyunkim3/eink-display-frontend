@@ -1,4 +1,4 @@
-import { getCalendarEvents } from "./calendar";
+import { getCalendarEvents, hasCalendarIcalUrls } from "./calendar";
 import { getStockQuotes } from "./stocks";
 import { getWeather } from "./weather";
 import type { DashboardData, WeatherSnapshot } from "./types";
@@ -26,6 +26,14 @@ type DashboardOptions = {
   forceRefresh?: boolean;
 };
 
+function calendarConfigured(): boolean {
+  try {
+    return hasCalendarIcalUrls();
+  } catch {
+    return true;
+  }
+}
+
 export async function getDashboardData(options: DashboardOptions = {}): Promise<DashboardData> {
   const notices: string[] = [];
   const [weatherResult, calendarResult, stockResult] = await Promise.allSettled([
@@ -51,8 +59,8 @@ export async function getDashboardData(options: DashboardOptions = {}): Promise<
     );
   }
 
-  if (!process.env.GOOGLE_CALENDAR_ICAL_URL) {
-    notices.push("GOOGLE_CALENDAR_ICAL_URL 미설정");
+  if (!calendarConfigured()) {
+    notices.push("GOOGLE_CALENDAR_ICAL_URLS 미설정");
   }
 
   const stocks = stockResult.status === "fulfilled" ? stockResult.value : [];

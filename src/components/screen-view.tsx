@@ -26,7 +26,7 @@ export const SCREEN_PAGE_TITLES = [
   "요약",
   "주간날씨",
   "캘린더",
-  "국내주식",
+  "시장지표",
   "기기상태",
   "사진"
 ] as const;
@@ -225,7 +225,7 @@ function OverviewPanel({ data }: { data: DashboardData }) {
           </div>
 
           <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
-            <div style={{ fontSize: 17, fontWeight: 900, marginBottom: 6 }}>국내 주식</div>
+            <div style={{ fontSize: 17, fontWeight: 900, marginBottom: 6 }}>시장 지표</div>
             {topStocks.length > 0 ? (
               <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 {topStocks.map((stock) => (
@@ -422,7 +422,7 @@ function StockRow({ stock, compact = false }: { stock: StockQuote; compact?: boo
 
 function StocksPanel({ data }: { data: DashboardData }) {
   return (
-    <PanelShell title="국내주식" subtitle="네이버 금융">
+    <PanelShell title="시장지표" subtitle="네이버 금융 · Yahoo">
       <div style={{ display: "flex", flexDirection: "column", gap: 9, marginTop: 16 }}>
         {data.stocks.length > 0 ? (
           data.stocks.slice(0, 7).map((stock) => <StockRow key={stock.code} stock={stock} />)
