@@ -1,0 +1,38 @@
+@import "tailwindcss";
+
+:root {
+  --background: #f5f1e8;
+  --foreground: #1a1a18;
+  --muted: #706d66;
+  --line: #1a1a18;
+  --panel: #fffaf0;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+a {
+  color: inherit;
+}
+
+.eink-frame {
+  width: min(100%, 800px);
+  aspect-ratio: 5 / 3;
+  background: #f8f6ed;
+  border: 3px solid #1a1a18;
+  color: #111;
+  overflow: hidden;
+}
