@@ -99,6 +99,11 @@ function dateKey(date: Date): string {
   return `${year}-${month}-${day}`;
 }
 
+function calendarDayLabel(date: Date): string {
+  if (date.getDate() === 1) return `${date.getMonth() + 1}월 1일`;
+  return String(date.getDate());
+}
+
 function monthCells(value: string): Date[] {
   const base = new Date(value);
   const first = new Date(base.getFullYear(), base.getMonth(), 1);
@@ -522,6 +527,7 @@ function CalendarPanel({ data }: { data: DashboardData }) {
               const dayEvents = eventsByDate[key] ?? [];
               const muted = cell.getMonth() !== currentMonth;
               const borderColor = muted ? "#999" : "#111";
+              const isFirstDayOfMonth = cell.getDate() === 1;
 
               return (
                 <div
@@ -541,7 +547,16 @@ function CalendarPanel({ data }: { data: DashboardData }) {
                     opacity: muted ? 0.45 : 1
                   }}
                 >
-                  <div style={{ display: "flex", fontSize: 14, fontWeight: 900 }}>{cell.getDate()}</div>
+                  <div
+                    style={{
+                      display: "flex",
+                      fontSize: isFirstDayOfMonth ? 12 : 14,
+                      fontWeight: 900,
+                      lineHeight: 1
+                    }}
+                  >
+                    {calendarDayLabel(cell)}
+                  </div>
                   {dayEvents.slice(0, 2).map((event) => (
                     <div
                       key={event.uid}
@@ -884,8 +899,6 @@ export function ScreenView({ data, deviceStatus, photoSrc = DEFAULT_PHOTO_SRC }:
         }}
       >
         <div style={{ display: "flex", gap: 10, alignItems: "center" }}>
-          <span>ESP32 E-INK</span>
-          <span style={{ fontWeight: 700 }}>|</span>
           <span>{SCREEN_PAGE_TITLES[page]}</span>
           <span style={{ fontWeight: 700 }}>|</span>
           <span>
