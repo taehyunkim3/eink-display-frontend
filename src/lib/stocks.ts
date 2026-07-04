@@ -71,7 +71,8 @@ const DEFAULT_STOCKS = [
   ["yahoo", "^GSPC", "S&P 500", "index"],
   ["yahoo", "^IXIC", "NASDAQ", "index"],
   ["yahoo", "KRW=X", "USD/KRW", "fx"],
-  ["yahoo", "CL=F", "WTI 유가(달러)", "commodity"]
+  ["yahoo", "BTC-USD", "비트코인(달러)", "index"],
+  ["yahoo", "GC=F", "금 선물(달러)", "commodity"]
 ] as const;
 const MARKET_FETCH_TIMEOUT_MS = 2500;
 
