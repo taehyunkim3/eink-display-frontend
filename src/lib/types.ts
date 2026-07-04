@@ -66,12 +66,19 @@ export type StockQuote = {
   };
 };
 
+export type NewsHeadline = {
+  title: string;
+  source: string;
+  publishedAt: string | null;
+};
+
 export type DashboardData = {
   generatedAt: string;
   refreshSeconds: number;
   weather: WeatherSnapshot;
   events: CalendarEvent[];
   stocks: StockQuote[];
+  news: NewsHeadline[];
   notices: string[];
 };
 

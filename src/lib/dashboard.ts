@@ -1,4 +1,5 @@
 import { getCalendarEvents, hasCalendarIcalUrls } from "./calendar";
+import { getNewsHeadlines } from "./news";
 import { getStockQuotes } from "./stocks";
 import { getWeather } from "./weather";
 import type { DashboardData, WeatherSnapshot } from "./types";
@@ -36,10 +37,11 @@ function calendarConfigured(): boolean {
 
 export async function getDashboardData(options: DashboardOptions = {}): Promise<DashboardData> {
   const notices: string[] = [];
-  const [weatherResult, calendarResult, stockResult] = await Promise.allSettled([
+  const [weatherResult, calendarResult, stockResult, newsResult] = await Promise.allSettled([
     getWeather(options),
     getCalendarEvents(options),
-    getStockQuotes(options)
+    getStockQuotes(options),
+    getNewsHeadlines(options)
   ]);
 
   const weather =
@@ -69,12 +71,19 @@ export async function getDashboardData(options: DashboardOptions = {}): Promise<
     notices.push(stockResult.reason instanceof Error ? stockResult.reason.message : "Stock failed");
   }
 
+  const news = newsResult.status === "fulfilled" ? newsResult.value : [];
+
+  if (newsResult.status === "rejected") {
+    notices.push(newsResult.reason instanceof Error ? newsResult.reason.message : "News failed");
+  }
+
   return {
     generatedAt: new Date().toISOString(),
     refreshSeconds: refreshSeconds(),
     weather,
     events,
     stocks,
+    news,
     notices
   };
 }

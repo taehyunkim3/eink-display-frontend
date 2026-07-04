@@ -30,7 +30,8 @@ export const SCREEN_PAGE_TITLES = [
   "시장지표",
   "차트1",
   "차트2",
-  "차트3"
+  "차트3",
+  "뉴스"
 ] as const;
 export const SCREEN_PAGE_COUNT = SCREEN_PAGE_TITLES.length;
 const EINK_TEXT_WEIGHT = 600;
@@ -87,12 +88,19 @@ function formatSignedStockValue(stock: StockQuote, value: string | null, suffix 
   return `${unsignedValue}${suffix}`;
 }
 
+function addThousandsSeparators(value: string): string {
+  return value.replace(/^(\D*)(\d+)/, (_, prefix: string, digits: string) =>
+    `${prefix}${digits.replace(/\B(?=(\d{3})+(?!\d))/g, ",")}`
+  );
+}
+
 function formatStockPrice(value: string | null): string {
-  return value ? value.replaceAll(",", "") : "--";
+  return value ? addThousandsSeparators(value.replaceAll(",", "")) : "--";
 }
 
 function formatChartPrice(value: number): string {
-  return Number(value.toFixed(value >= 1000 ? 0 : value >= 100 ? 1 : 2)).toString();
+  const rounded = Number(value.toFixed(value >= 1000 ? 0 : value >= 100 ? 1 : 2)).toString();
+  return addThousandsSeparators(rounded);
 }
 
 function formatInvestorFlowValue(flow: StockQuote["investorFlow"], value: number | null | undefined): string {
@@ -1741,6 +1749,64 @@ function PhotoPanel({ photoSrc }: { photoSrc: string }) {
   );
 }
 
+function formatNewsTime(publishedAt: string | null): string {
+  if (!publishedAt) return "--:--";
+  const date = new Date(publishedAt);
+  if (!Number.isFinite(date.getTime())) return "--:--";
+  const formatted = new Intl.DateTimeFormat("ko-KR", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "Asia/Seoul"
+  }).format(date);
+  return formatted;
+}
+
+function NewsPanel({ data }: { data: DashboardData }) {
+  const headlines = data.news?.slice(0, 12) ?? [];
+
+  return (
+    <PanelShell title="증시 뉴스" subtitle="주요 헤드라인">
+      {headlines.length > 0 ? (
+        <div style={{ display: "flex", flexDirection: "column", marginTop: 8 }}>
+          {headlines.map((headline, index) => (
+            <div
+              key={`${headline.title}-${index}`}
+              style={{
+                display: "flex",
+                alignItems: "baseline",
+                gap: 10,
+                padding: "6px 0",
+                borderBottom: "1px solid #111",
+                lineHeight: 1.15
+              }}
+            >
+              <span style={{ fontSize: 12, fontWeight: EINK_BOLD_WEIGHT, minWidth: 40 }}>
+                {formatNewsTime(headline.publishedAt)}
+              </span>
+              <span
+                style={{
+                  flex: 1,
+                  fontSize: 15,
+                  fontWeight: EINK_TEXT_WEIGHT,
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis"
+                }}
+              >
+                {headline.title}
+              </span>
+              <span style={{ fontSize: 11, minWidth: 52, textAlign: "right" }}>{headline.source}</span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <EmptyState height={392}>뉴스 정보 없음</EmptyState>
+      )}
+    </PanelShell>
+  );
+}
+
 function MainPanel({ page, data }: ScreenViewProps & { page: number }) {
   if (page === 0) return <OverviewPanel data={data} />;
   if (page === 1) return <WeeklyWeatherPanel data={data} />;
@@ -1750,6 +1816,7 @@ function MainPanel({ page, data }: ScreenViewProps & { page: number }) {
   if (page === 5) return <StockChartsPanel data={data} group={0} />;
   if (page === 6) return <StockChartsPanel data={data} group={1} />;
   if (page === 7) return <StockChartsPanel data={data} group={2} />;
+  if (page === 8) return <NewsPanel data={data} />;
   return <StocksPanel data={data} />;
 }
 
