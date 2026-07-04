@@ -28,8 +28,7 @@ export const SCREEN_PAGE_TITLES = [
   "캘린더",
   "주간일정",
   "시장지표",
-  "기기상태",
-  "사진"
+  "기기상태"
 ] as const;
 export const SCREEN_PAGE_COUNT = SCREEN_PAGE_TITLES.length;
 const EINK_TEXT_WEIGHT = 600;

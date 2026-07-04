@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 import { NextRequest } from "next/server";
 import sharp from "sharp";
-import { SCREEN_PAGE_COUNT, ScreenView } from "@/components/screen-view";
+import { ScreenView } from "@/components/screen-view";
 import { assertDeviceAuth } from "@/lib/auth";
 import { getDashboardData } from "@/lib/dashboard";
 import { parseDeviceStatus } from "@/lib/device-status";
@@ -28,12 +28,9 @@ function orderedDitherThreshold(x: number, y: number) {
   return 72 + BAYER_8X8[(y & 7) * 8 + (x & 7)] * 2;
 }
 
-function normalizePage(page: number) {
-  return ((page % SCREEN_PAGE_COUNT) + SCREEN_PAGE_COUNT) % SCREEN_PAGE_COUNT;
-}
-
 function isPhotoPage(page: number) {
-  return normalizePage(page) === SCREEN_PAGE_COUNT - 1;
+  void page;
+  return false;
 }
 
 function packMonoBitmap(grayscale: Buffer, dither: boolean) {

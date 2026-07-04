@@ -87,12 +87,12 @@ export default async function PreviewPage() {
 
         <section className="grid gap-3 text-sm md:grid-cols-2">
           <div className="border-2 border-neutral-900 bg-white p-4">
-            <p className="font-bold">Device PNG</p>
-            <code>/api/screen.png</code>
-          </div>
-          <div className="border-2 border-neutral-900 bg-white p-4">
             <p className="font-bold">Device JSON</p>
             <code>/api/screen.json</code>
+          </div>
+          <div className="border-2 border-neutral-900 bg-white p-4">
+            <p className="font-bold">Browser PNG</p>
+            <code>/api/screen.png</code>
           </div>
         </section>
       </div>

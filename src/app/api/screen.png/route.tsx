@@ -1,7 +1,7 @@
 import { ImageResponse } from "next/og";
 import { NextRequest } from "next/server";
 import sharp from "sharp";
-import { SCREEN_PAGE_COUNT, ScreenView } from "@/components/screen-view";
+import { ScreenView } from "@/components/screen-view";
 import { assertDeviceAuth } from "@/lib/auth";
 import { getDashboardData } from "@/lib/dashboard";
 import { parseDeviceStatus } from "@/lib/device-status";
@@ -11,12 +11,9 @@ import { SCREEN_HEIGHT, SCREEN_WIDTH } from "@/lib/screen";
 export const dynamic = "force-dynamic";
 export const runtime = "nodejs";
 
-function normalizePage(page: number) {
-  return ((page % SCREEN_PAGE_COUNT) + SCREEN_PAGE_COUNT) % SCREEN_PAGE_COUNT;
-}
-
 function isPhotoPage(page: number) {
-  return normalizePage(page) === SCREEN_PAGE_COUNT - 1;
+  void page;
+  return false;
 }
 
 export async function GET(request: NextRequest) {

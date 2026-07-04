@@ -37,7 +37,7 @@ export default function HomePage() {
             Health API
           </a>
           <div className="border-2 border-neutral-900 bg-white p-5 text-lg font-semibold">
-            Device API: /api/screen.png
+            Device API: /api/screen.json
           </div>
         </div>
       </section>
