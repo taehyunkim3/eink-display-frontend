@@ -58,6 +58,16 @@ const DEEP_SLEEP_OPTIONS = [
   { value: "1", label: "켜기 (배터리 절약, 버튼 반응 느림)" }
 ];
 
+const NIGHT_MODE_OPTIONS = [
+  { value: "", label: "변경 안 함" },
+  { value: "off", label: "끄기" },
+  { value: "23-6", label: "23시 ~ 6시" },
+  { value: "0-6", label: "0시 ~ 6시" },
+  { value: "0-7", label: "0시 ~ 7시" },
+  { value: "1-8", label: "1시 ~ 8시" },
+  { value: "22-7", label: "22시 ~ 7시" }
+];
+
 type ConnectionState = "idle" | "connecting" | "connected" | "error";
 
 type DeviceConfig = {
@@ -69,6 +79,8 @@ type DeviceConfig = {
   pageMask?: number;
   rotateSec?: number;
   deepSleep?: boolean;
+  nightStart?: number;
+  nightEnd?: number;
 };
 
 function statusCodeToMessage(code: string): string {
@@ -102,6 +114,7 @@ export default function SettingPage() {
   const [startPage, setStartPage] = useState("");
   const [rotateSec, setRotateSec] = useState("");
   const [deepSleep, setDeepSleep] = useState("");
+  const [nightMode, setNightMode] = useState("");
   // null = 변경 안 함, otherwise a 9-bit visibility array
   const [visiblePages, setVisiblePages] = useState<boolean[] | null>(null);
 
@@ -128,6 +141,11 @@ export default function SettingPage() {
     if (typeof config.startPage === "number") setStartPage(String(config.startPage));
     if (typeof config.rotateSec === "number") setRotateSec(String(config.rotateSec));
     if (typeof config.deepSleep === "boolean") setDeepSleep(config.deepSleep ? "1" : "0");
+    if (typeof config.nightStart === "number" && typeof config.nightEnd === "number") {
+      setNightMode(
+        config.nightStart < 0 ? "off" : `${config.nightStart}-${config.nightEnd}`
+      );
+    }
     if (typeof config.pageMask === "number") {
       setVisiblePages(PAGE_TITLES.map((_, index) => ((config.pageMask! >> index) & 1) === 1));
     }
@@ -240,6 +258,16 @@ export default function SettingPage() {
     if (startPage) payload.startPage = Number(startPage);
     if (rotateSec) payload.rotateSec = Number(rotateSec);
     if (deepSleep) payload.deepSleep = deepSleep === "1";
+    if (nightMode) {
+      if (nightMode === "off") {
+        payload.nightStart = -1;
+        payload.nightEnd = 6;
+      } else {
+        const [start, end] = nightMode.split("-").map(Number);
+        payload.nightStart = start;
+        payload.nightEnd = end;
+      }
+    }
     if (visiblePages) {
       const mask = visiblePages.reduce((acc, visible, index) => (visible ? acc | (1 << index) : acc), 0);
       if (mask === 0) {
@@ -264,6 +292,7 @@ export default function SettingPage() {
     startPage,
     rotateSec,
     deepSleep,
+    nightMode,
     visiblePages,
     writePayload
   ]);
@@ -493,7 +522,28 @@ export default function SettingPage() {
                 ))}
               </select>
             </label>
+            <label className={labelClass}>
+              밤 모드 (야간 갱신 중지)
+              <select
+                value={nightMode}
+                onChange={(event) => setNightMode(event.target.value)}
+                className={selectClass}
+              >
+                {NIGHT_MODE_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
           </div>
+          {nightMode && nightMode !== "off" && (
+            <p className="mt-3 border-2 border-neutral-900 bg-neutral-100 p-3 text-sm">
+              밤 모드 시간대에는 자동 갱신을 멈추고 종료 시각까지 대기해요. 버튼을 누르면
+              평소처럼 바로 반응해요. 시간은 마지막 데이터 수신 시각 기준으로 추정하므로
+              몇 분 정도 오차가 있을 수 있어요.
+            </p>
+          )}
           {deepSleep === "1" && (
             <p className="mt-3 border-2 border-neutral-900 bg-neutral-100 p-3 text-sm">
               Deep Sleep을 켜면 갱신 주기 사이에 기기가 완전히 잠들어 배터리가 크게 절약돼요.
