@@ -578,104 +578,251 @@ function EmptyState({ children, height = 238 }: { children: React.ReactNode; hei
   );
 }
 
+function OverviewCard({
+  title,
+  right,
+  children,
+  style
+}: {
+  title: string;
+  right?: string;
+  children: React.ReactNode;
+  style?: React.CSSProperties;
+}) {
+  return (
+    <div
+      style={{
+        border: "1px solid #111",
+        display: "flex",
+        flexDirection: "column",
+        minWidth: 0,
+        ...style
+      }}
+    >
+      <div
+        style={{
+          background: "#111",
+          color: "#fff",
+          padding: "3px 9px",
+          fontSize: 13,
+          fontWeight: EINK_BOLD_WEIGHT,
+          display: "flex",
+          justifyContent: "space-between"
+        }}
+      >
+        <span>{title}</span>
+        {right ? <span>{right}</span> : null}
+      </div>
+      <div style={{ flex: 1, minHeight: 0, padding: "8px 12px" }}>{children}</div>
+    </div>
+  );
+}
+
+function TrendArrow({ direction }: { direction: string | null }) {
+  const glyph = direction === "up" ? "▲" : direction === "down" ? "▼" : "―";
+  return <span style={{ fontSize: 13 }}>{glyph}</span>;
+}
+
 function OverviewPanel({ data }: { data: DashboardData }) {
-  const nextEvents = data.events.slice(0, 2);
-  const topStocks = data.stocks.slice(0, 2);
+  const nextEvents = data.events.slice(0, 3);
+  const marketStocks = data.stocks.slice(0, 3);
+  const headlines = data.news?.slice(0, 2) ?? [];
+  const todayForecast = data.weather.daily[0];
+  const hourly = todayForecast?.hourly?.slice(0, 3) ?? [];
 
   return (
-    <PanelShell title="오늘 요약" subtitle="날씨 · 일정 · 주식">
-      <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 12 }}>
-        <div style={{ display: "flex", gap: 14 }}>
-          {[
-            ["체감", formatTemperature(data.weather.apparentTemperatureC)],
-            ["습도", formatPercent(data.weather.humidityPercent)],
-            ["바람", formatWind(data.weather.windKph)]
-          ].map(([label, value]) => (
-            <div
-              key={label}
-              style={{
-                flex: 1,
-                border: "2px solid #111",
-                padding: "9px 12px",
-                display: "flex",
-                flexDirection: "column",
-                gap: 4,
-                fontWeight: EINK_BOLD_WEIGHT
-              }}
-            >
-              <span style={{ fontSize: 14 }}>{label}</span>
-              <span style={{ fontSize: 22 }}>{value}</span>
+    <section
+      style={{
+        flex: 1,
+        minWidth: 0,
+        boxSizing: "border-box",
+        padding: 10,
+        display: "flex",
+        flexDirection: "column",
+        gap: 10
+      }}
+    >
+      <div style={{ display: "flex", gap: 10, height: 210 }}>
+        <OverviewCard title="오늘 날씨" right={data.weather.label} style={{ flex: 1 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <WeatherIcon code={data.weather.weatherCode} size={48} />
+            <div style={{ minWidth: 0 }}>
+              <div style={{ fontSize: 26, fontWeight: EINK_HEAVY_WEIGHT }}>
+                {formatTemperature(data.weather.temperatureC)}
+              </div>
+              <div
+                style={{
+                  fontSize: 14,
+                  fontWeight: EINK_BOLD_WEIGHT,
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis"
+                }}
+              >
+                {data.weather.condition ?? "날씨 정보 없음"}
+              </div>
             </div>
-          ))}
-        </div>
+            {todayForecast ? (
+              <div style={{ marginLeft: "auto", fontSize: 12, fontWeight: EINK_BOLD_WEIGHT }}>
+                <div>최고 {formatTemperature(todayForecast.maxTemperatureC)}</div>
+                <div>최저 {formatTemperature(todayForecast.minTemperatureC)}</div>
+                <div>강수 {formatPercent(todayForecast.precipitationProbabilityPercent)}</div>
+              </div>
+            ) : null}
+          </div>
+          <div
+            style={{
+              borderTop: "1px solid #111",
+              marginTop: 8,
+              paddingTop: 6,
+              display: "flex",
+              gap: 16,
+              fontSize: 12,
+              fontWeight: EINK_BOLD_WEIGHT
+            }}
+          >
+            <span>체감 {formatTemperature(data.weather.apparentTemperatureC)}</span>
+            <span>습도 {formatPercent(data.weather.humidityPercent)}</span>
+            <span>바람 {formatWind(data.weather.windKph)}</span>
+          </div>
+          {hourly.length > 0 ? (
+            <div style={{ display: "flex", gap: 20, marginTop: 8 }}>
+              {hourly.map((hour) => (
+                <div key={hour.time} style={{ display: "flex", alignItems: "center", gap: 6 }}>
+                  <WeatherIcon code={hour.weatherCode} size={26} />
+                  <div style={{ fontSize: 11, fontWeight: EINK_BOLD_WEIGHT }}>
+                    <div>{formatNewsTime(hour.time)}</div>
+                    <div>{formatTemperature(hour.temperatureC)}</div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : null}
+        </OverviewCard>
 
-        <div style={{ display: "flex", gap: 16, minHeight: 0 }}>
-          <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
-            <div style={{ fontSize: 17, fontWeight: EINK_BOLD_WEIGHT, marginBottom: 6 }}>다가오는 일정</div>
-            {nextEvents.length > 0 ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                {nextEvents.map((event) => {
-                  const meta = calendarEventMeta(event);
-                  return (
+        <OverviewCard
+          title="다가오는 일정"
+          right={data.events.length > 0 ? `${data.events.length}건` : undefined}
+          style={{ flex: 1 }}
+        >
+          {nextEvents.length > 0 ? (
+            <div style={{ display: "flex", flexDirection: "column" }}>
+              {nextEvents.map((event, index) => (
+                <div
+                  key={event.uid}
+                  style={{
+                    display: "flex",
+                    gap: 10,
+                    padding: "5px 0",
+                    borderBottom: index < nextEvents.length - 1 ? "1px solid #111" : "none"
+                  }}
+                >
+                  <span style={{ fontSize: 13, fontWeight: EINK_HEAVY_WEIGHT, minWidth: 44 }}>
+                    {formatEventTime(event)}
+                  </span>
+                  <div style={{ minWidth: 0 }}>
                     <div
-                      key={event.uid}
                       style={{
-                        borderBottom: "1px solid #111",
-                        paddingBottom: 6,
-                        display: "flex",
-                        flexDirection: "column"
+                        fontSize: 14,
+                        fontWeight: EINK_BOLD_WEIGHT,
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis"
                       }}
                     >
-                      <div style={{ fontSize: 12, fontWeight: EINK_TEXT_WEIGHT }}>{formatEventTime(event)}</div>
-                      <div
-                        style={{
-                          fontSize: 16,
-                          fontWeight: EINK_BOLD_WEIGHT,
-                          whiteSpace: "nowrap",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis"
-                        }}
-                      >
-                        {event.title}
-                      </div>
-                      {meta ? (
-                        <div
-                          style={{
-                            fontSize: 11,
-                            fontWeight: EINK_TEXT_WEIGHT,
-                            color: "#111",
-                            whiteSpace: "nowrap",
-                            overflow: "hidden",
-                            textOverflow: "ellipsis"
-                          }}
-                        >
-                          {meta}
-                        </div>
-                      ) : null}
+                      {event.title}
                     </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <EmptyState height={166}>일정 없음</EmptyState>
-            )}
-          </div>
+                    <div style={{ fontSize: 11, fontWeight: EINK_TEXT_WEIGHT }}>
+                      {calendarEventMeta(event) ?? event.calendarName ?? "캘린더"}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <EmptyState height={140}>예정된 일정이 없어요</EmptyState>
+          )}
+        </OverviewCard>
+      </div>
 
-          <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
-            <div style={{ fontSize: 17, fontWeight: EINK_BOLD_WEIGHT, marginBottom: 6 }}>시장 지표</div>
-            {topStocks.length > 0 ? (
-              <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
-                {topStocks.map((stock) => (
-                  <StockRow key={stock.code} stock={stock} compact />
-                ))}
+      <OverviewCard title="시장 지표" style={{ height: 126 }}>
+        <div style={{ display: "flex", height: "100%" }}>
+          {marketStocks.length > 0 ? (
+            marketStocks.map((stock, index) => (
+              <div
+                key={stock.code}
+                style={{
+                  flex: 1,
+                  minWidth: 0,
+                  display: "flex",
+                  gap: 8,
+                  paddingLeft: index > 0 ? 12 : 0,
+                  borderLeft: index > 0 ? "1px solid #111" : "none"
+                }}
+              >
+                <div style={{ minWidth: 0 }}>
+                  <div style={{ fontSize: 13, fontWeight: EINK_HEAVY_WEIGHT }}>{stock.name}</div>
+                  <div style={{ fontSize: 21, fontWeight: EINK_HEAVY_WEIGHT }}>{stock.price}</div>
+                  <div style={{ fontSize: 12, fontWeight: EINK_BOLD_WEIGHT }}>
+                    <TrendArrow direction={stock.direction} /> {stock.changePercent}%
+                  </div>
+                </div>
+                {stock.history && stock.history.length > 1 ? (
+                  <div style={{ marginLeft: "auto", alignSelf: "center" }}>
+                    <Sparkline values={stock.history} width={92} height={54} />
+                  </div>
+                ) : null}
               </div>
-            ) : (
-              <EmptyState height={166}>주식 정보 없음</EmptyState>
-            )}
-          </div>
+            ))
+          ) : (
+            <EmptyState height={80}>주식 정보 없음</EmptyState>
+          )}
+        </div>
+      </OverviewCard>
+
+      <div style={{ display: "flex", border: "1px solid #111", minHeight: 62 }}>
+        <div
+          style={{
+            background: "#111",
+            color: "#fff",
+            padding: "0 12px",
+            display: "flex",
+            alignItems: "center",
+            fontSize: 13,
+            fontWeight: EINK_BOLD_WEIGHT
+          }}
+        >
+          뉴스
+        </div>
+        <div style={{ flex: 1, minWidth: 0, padding: "6px 12px", display: "flex", flexDirection: "column", justifyContent: "center" }}>
+          {headlines.length > 0 ? (
+            headlines.map((headline, index) => (
+              <div
+                key={`${headline.title}-${index}`}
+                style={{ display: "flex", gap: 10, alignItems: "baseline", lineHeight: 1.35 }}
+              >
+                <span style={{ fontSize: 11, fontWeight: EINK_BOLD_WEIGHT, minWidth: 38 }}>
+                  {formatNewsTime(headline.publishedAt)}
+                </span>
+                <span
+                  style={{
+                    fontSize: 14,
+                    fontWeight: EINK_TEXT_WEIGHT,
+                    whiteSpace: "nowrap",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis"
+                  }}
+                >
+                  {headline.title}
+                </span>
+              </div>
+            ))
+          ) : (
+            <span style={{ fontSize: 13, fontWeight: EINK_BOLD_WEIGHT }}>뉴스 정보 없음</span>
+          )}
         </div>
       </div>
-    </PanelShell>
+    </section>
   );
 }
 
