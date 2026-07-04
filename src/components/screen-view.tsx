@@ -28,7 +28,9 @@ export const SCREEN_PAGE_TITLES = [
   "캘린더",
   "주간일정",
   "시장지표",
-  "기기상태"
+  "차트1",
+  "차트2",
+  "차트3"
 ] as const;
 export const SCREEN_PAGE_COUNT = SCREEN_PAGE_TITLES.length;
 const EINK_TEXT_WEIGHT = 600;
@@ -661,7 +663,10 @@ function OverviewPanel({ data }: { data: DashboardData }) {
 }
 
 function WeeklyWeatherPanel({ data }: { data: DashboardData }) {
-  const days = data.weather.daily.slice(0, 7);
+  const days = data.weather.daily.slice(0, 8);
+  const contentHeight = SCREEN_HEIGHT - 6 - 36;
+  const tileWidth = (SCREEN_WIDTH - 6) / 2;
+  const tileHeight = contentHeight / 4;
 
   return (
     <section
@@ -669,78 +674,72 @@ function WeeklyWeatherPanel({ data }: { data: DashboardData }) {
         flex: 1,
         minWidth: 0,
         boxSizing: "border-box",
-        padding: "3px 8px",
+        padding: 0,
         display: "flex",
-        flexDirection: "column"
+        flexWrap: "wrap"
       }}
     >
-      <div
-        style={{
-          display: "flex",
-          justifyContent: "space-between",
-          alignItems: "center",
-          height: 22,
-          borderBottom: "1px solid #111",
-          fontWeight: EINK_BOLD_WEIGHT
-        }}
-      >
-        <div style={{ display: "flex", fontSize: 16 }}>{data.weather.label} 7일 예보</div>
-        <div style={{ display: "flex", fontSize: 12 }}>시간대: 6시 · 12시 · 18시 · 23시</div>
-      </div>
+      {days.length > 0 ? (
+        Array.from({ length: 8 }, (_, index) => {
+          const day = days[index];
+          const rowIndex = Math.floor(index / 2);
+          const columnIndex = index % 2;
 
-      <div style={{ display: "flex", flexDirection: "column", gap: 0, marginTop: 0 }}>
-        {days.length > 0 ? (
-          days.map((day) => (
+          return day ? (
             <div
               key={day.date}
               style={{
-                height: 59,
+                width: tileWidth,
+                height: tileHeight,
                 boxSizing: "border-box",
-                borderTop: "0px solid transparent",
-                borderLeft: "1px solid #111",
+                borderTop: rowIndex === 0 ? "1px solid #111" : "0px solid transparent",
+                borderLeft: columnIndex === 0 ? "1px solid #111" : "0px solid transparent",
                 borderRight: "1px solid #111",
                 borderBottom: "1px solid #111",
-                padding: "4px 5px",
+                padding: "7px 9px",
                 display: "flex",
-                alignItems: "center",
-                gap: 7,
+                flexDirection: "column",
+                justifyContent: "space-between",
                 fontWeight: EINK_BOLD_WEIGHT
               }}
             >
-              <div style={{ display: "flex", width: 58, flexDirection: "column" }}>
-                <div style={{ display: "flex", fontSize: 14 }}>{formatForecastShortDate(day.date)}</div>
-              </div>
-              <WeatherIcon code={day.weatherCode} size={30} />
-              <div style={{ display: "flex", width: 122, flexDirection: "column", gap: 3, minWidth: 0 }}>
-                <div
-                  style={{
-                    display: "flex",
-                    fontSize: 15,
-                    lineHeight: 1,
-                    whiteSpace: "nowrap",
-                    overflow: "hidden",
-                    textOverflow: "ellipsis"
-                  }}
-                >
-                  {day.condition}
+              <div style={{ display: "flex", alignItems: "center", gap: 9, minWidth: 0 }}>
+                <WeatherIcon code={day.weatherCode} size={32} />
+                <div style={{ display: "flex", flexDirection: "column", minWidth: 0, gap: 3 }}>
+                  <div style={{ display: "flex", fontSize: 14, lineHeight: 1 }}>
+                    {formatForecastShortDate(day.date)}
+                  </div>
+                  <div
+                    style={{
+                      display: "flex",
+                      fontSize: 16,
+                      lineHeight: 1,
+                      whiteSpace: "nowrap",
+                      overflow: "hidden",
+                      textOverflow: "ellipsis"
+                    }}
+                  >
+                    {day.condition}
+                  </div>
                 </div>
-                <div style={{ display: "flex", fontSize: 13 }}>
-                  {`${formatTemperature(day.minTemperatureC)}-${formatTemperature(day.maxTemperatureC)}`}
+                <div style={{ marginLeft: "auto", display: "flex", flexDirection: "column", alignItems: "flex-end" }}>
+                  <div style={{ display: "flex", fontSize: 15 }}>
+                    {`${formatTemperature(day.minTemperatureC)}-${formatTemperature(day.maxTemperatureC)}`}
+                  </div>
+                  <div style={{ display: "flex", fontSize: 12 }}>
+                    {`강수 ${formatPercent(day.precipitationProbabilityPercent)}`}
+                  </div>
                 </div>
               </div>
-              <div style={{ display: "flex", width: 72, flexDirection: "column", gap: 3 }}>
-                <div style={{ display: "flex", fontSize: 12 }}>{`강수 ${formatPercent(day.precipitationProbabilityPercent)}`}</div>
-                <div style={{ display: "flex", fontSize: 11 }}>최고확률</div>
-              </div>
-              <div style={{ display: "flex", flex: 1, gap: 4, minWidth: 0 }}>
+              <div style={{ display: "flex", gap: 5, minWidth: 0 }}>
                 {day.hourly.length > 0 ? (
-                  day.hourly.slice(0, 4).map((hour) => (
+                  day.hourly.slice(0, 3).map((hour) => (
                     <div
                       key={hour.time}
                       style={{
                         flex: 1,
                         minWidth: 0,
-                        height: 46,
+                        height: 42,
                         boxSizing: "border-box",
                         borderLeft: "1px dashed #111",
                         paddingLeft: 4,
@@ -751,7 +750,7 @@ function WeeklyWeatherPanel({ data }: { data: DashboardData }) {
                     >
                       <div style={{ display: "flex", alignItems: "center", gap: 3 }}>
                         <div style={{ display: "flex", fontSize: 11 }}>{formatForecastHour(hour.time)}</div>
-                        <WeatherIcon code={hour.weatherCode} size={13} />
+                        <WeatherIcon code={hour.weatherCode} size={12} />
                       </div>
                       <div style={{ display: "flex", fontSize: 13 }}>{formatTemperature(hour.temperatureC)}</div>
                       <div style={{ display: "flex", fontSize: 10 }}>
@@ -775,11 +774,24 @@ function WeeklyWeatherPanel({ data }: { data: DashboardData }) {
                 )}
               </div>
             </div>
-          ))
-        ) : (
-          <EmptyState height={390}>주간 예보 없음</EmptyState>
-        )}
-      </div>
+          ) : (
+            <div
+              key={`empty-${index}`}
+              style={{
+                width: tileWidth,
+                height: tileHeight,
+                boxSizing: "border-box",
+                borderTop: rowIndex === 0 ? "1px dashed #111" : "0px solid transparent",
+                borderLeft: columnIndex === 0 ? "1px dashed #111" : "0px solid transparent",
+                borderRight: "1px dashed #111",
+                borderBottom: "1px dashed #111"
+              }}
+            />
+          );
+        })
+      ) : (
+        <EmptyState height={390}>주간 예보 없음</EmptyState>
+      )}
     </section>
   );
 }
@@ -1342,6 +1354,191 @@ function MarketScaleTile({
   );
 }
 
+function DetailedStockChart({ stock, width, height }: { stock: StockQuote; width: number; height: number }) {
+  const range = marketGraphPercentRange(stock);
+  const midY = Math.round(height / 2);
+  const candleCount = Math.min(stock.candles?.length ?? 0, 36);
+  const baselinePrice = (() => {
+    const latestPrice = parseMarketNumber(stock.price);
+    const latestRate = parseMarketNumber(stock.changePercent);
+    if (latestPrice !== null && latestRate !== null && latestRate > -99) {
+      return latestPrice / (1 + latestRate / 100);
+    }
+    return stock.history[0] ?? null;
+  })();
+  const toY = (value: number) => {
+    if (!baselinePrice) return midY;
+    const percent = ((value - baselinePrice) / baselinePrice) * 100;
+    const clamped = Math.max(-range, Math.min(range, percent));
+    return height / 2 - (clamped / range) * (height / 2 - 5);
+  };
+
+  const candles = candleCount > 1 ? stock.candles.slice(-candleCount) : [];
+  const candleMarkup = candles
+    .map((candle, index) => {
+      const cx = 6 + (index / Math.max(1, candles.length - 1)) * (width - 12);
+      const slot = Math.max(5, (width - 12) / Math.max(1, candles.length));
+      const bodyWidth = Math.max(2, Math.min(6, slot - 2));
+      const highY = toY(candle.h);
+      const lowY = toY(candle.l);
+      const openY = toY(candle.o);
+      const closeY = toY(candle.c);
+      const top = Math.min(openY, closeY);
+      const bodyHeight = Math.max(2, Math.abs(closeY - openY));
+      const fill = candle.c >= candle.o ? "#fff" : "#111";
+
+      return (
+        `<line x1="${svgNumber(cx)}" y1="${svgNumber(highY)}" x2="${svgNumber(cx)}" y2="${svgNumber(lowY)}" stroke="#111" stroke-width="1"/>` +
+        `<rect x="${svgNumber(cx - bodyWidth / 2)}" y="${svgNumber(top)}" width="${svgNumber(bodyWidth)}" height="${svgNumber(bodyHeight)}" fill="${fill}" stroke="#111" stroke-width="1"/>`
+      );
+    })
+    .join("");
+
+  const points = percentSparklinePoints(stock, Math.max(24, Math.floor(width / 2)), width, height, range);
+  const linePath = smoothSvgPath(points);
+  const imageSrc = svgDataUri(
+    `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}" shape-rendering="geometricPrecision">` +
+      `<rect x="0.5" y="0.5" width="${width - 1}" height="${height - 1}" fill="#fff" stroke="#111" stroke-width="1"/>` +
+      `<line x1="4" y1="${Math.round(height / 4)}" x2="${width - 4}" y2="${Math.round(height / 4)}" stroke="#111" stroke-width="0.7" stroke-dasharray="1 5"/>` +
+      `<line x1="4" y1="${Math.round((height / 4) * 3)}" x2="${width - 4}" y2="${Math.round((height / 4) * 3)}" stroke="#111" stroke-width="0.7" stroke-dasharray="1 5"/>` +
+      `<line x1="4" y1="${midY}" x2="${width - 4}" y2="${midY}" stroke="#111" stroke-width="1" stroke-dasharray="3 4"/>` +
+      (candles.length > 1
+        ? candleMarkup
+        : `<path d="${linePath}" fill="none" stroke="#111" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>`) +
+      `</svg>`
+  );
+
+  return (
+    <div style={{ width, height, position: "relative", display: "flex", overflow: "hidden" }}>
+      {/* eslint-disable-next-line @next/next/no-img-element -- data URI SVG keeps chart rendering deterministic in next/og. */}
+      <img src={imageSrc} alt="" width={width} height={height} style={{ width, height }} />
+    </div>
+  );
+}
+
+function StockChartTile({
+  stock,
+  index,
+  width,
+  height,
+  rowIndex,
+  columnIndex
+}: {
+  stock: StockQuote;
+  index: number;
+  width: number;
+  height: number;
+  rowIndex: number;
+  columnIndex: number;
+}) {
+  const rate = formatSignedStockValue(stock, stock.changePercent, "%");
+
+  return (
+    <div
+      style={{
+        width,
+        height,
+        boxSizing: "border-box",
+        borderTop: rowIndex === 0 ? "1px solid #111" : "0px solid transparent",
+        borderLeft: columnIndex === 0 ? "1px solid #111" : "0px solid transparent",
+        borderRight: "1px solid #111",
+        borderBottom: "1px solid #111",
+        padding: "7px 8px",
+        display: "flex",
+        flexDirection: "column",
+        justifyContent: "space-between",
+        fontWeight: EINK_BOLD_WEIGHT
+      }}
+    >
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "flex-start" }}>
+        <div style={{ display: "flex", flexDirection: "column", minWidth: 0 }}>
+          <div
+            style={{
+              display: "flex",
+              fontSize: 15,
+              lineHeight: 1,
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis"
+            }}
+          >
+            {index + 1}. {stock.name}
+          </div>
+          <div style={{ display: "flex", fontSize: 10, lineHeight: 1.1 }}>
+            {stock.candles?.length > 1 ? "15분봉 캔들" : "라인"} · 전일종가 0%
+          </div>
+        </div>
+        <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", fontSize: 13, lineHeight: 1.1 }}>
+          <span>{stock.price ?? "--"}</span>
+          <span>{rate}</span>
+        </div>
+      </div>
+      <DetailedStockChart stock={stock} width={width - 16} height={height - 88} />
+      {stock.investorFlow ? (
+        <div style={{ display: "flex", fontSize: 9, lineHeight: 1, gap: 5, whiteSpace: "nowrap" }}>
+          <InvestorFlowMetric label="개인" flow={stock.investorFlow} value={stock.investorFlow.retail} justifyContent="flex-start" />
+          <InvestorFlowMetric label="기관" flow={stock.investorFlow} value={stock.investorFlow.institutional} justifyContent="center" />
+          <InvestorFlowMetric label="외인" flow={stock.investorFlow} value={stock.investorFlow.foreign} justifyContent="flex-end" />
+        </div>
+      ) : (
+        <div style={{ display: "flex", fontSize: 10 }}>개인/기관/외인 없음</div>
+      )}
+    </div>
+  );
+}
+
+function StockChartsPanel({ data, group }: { data: DashboardData; group: number }) {
+  const contentWidth = SCREEN_WIDTH - 6;
+  const contentHeight = SCREEN_HEIGHT - 6 - 36;
+  const tileWidth = contentWidth / 2;
+  const tileHeight = contentHeight / 2;
+  const stocks = data.stocks.slice(group * 4, group * 4 + 4);
+
+  return (
+    <section
+      style={{
+        flex: 1,
+        minWidth: 0,
+        boxSizing: "border-box",
+        padding: 0,
+        display: "flex",
+        flexWrap: "wrap"
+      }}
+    >
+      {Array.from({ length: 4 }, (_, index) => {
+        const stock = stocks[index];
+        const rowIndex = Math.floor(index / 2);
+        const columnIndex = index % 2;
+
+        return stock ? (
+          <StockChartTile
+            key={stock.code}
+            stock={stock}
+            index={group * 4 + index}
+            width={tileWidth}
+            height={tileHeight}
+            rowIndex={rowIndex}
+            columnIndex={columnIndex}
+          />
+        ) : (
+          <div
+            key={`empty-${index}`}
+            style={{
+              width: tileWidth,
+              height: tileHeight,
+              boxSizing: "border-box",
+              borderTop: rowIndex === 0 ? "1px dashed #111" : "0px solid transparent",
+              borderLeft: columnIndex === 0 ? "1px dashed #111" : "0px solid transparent",
+              borderRight: "1px dashed #111",
+              borderBottom: "1px dashed #111"
+            }}
+          />
+        );
+      })}
+    </section>
+  );
+}
+
 function StocksPanel({ data }: { data: DashboardData }) {
   const marketItems = data.stocks.filter((stock) => stock.category !== "equity");
   const equities = data.stocks.filter((stock) => stock.category === "equity");
@@ -1508,14 +1705,16 @@ function PhotoPanel({ photoSrc }: { photoSrc: string }) {
   );
 }
 
-function MainPanel({ page, data, deviceStatus, photoSrc }: ScreenViewProps & { page: number }) {
+function MainPanel({ page, data }: ScreenViewProps & { page: number }) {
   if (page === 0) return <OverviewPanel data={data} />;
   if (page === 1) return <WeeklyWeatherPanel data={data} />;
   if (page === 2) return <CalendarPanel data={data} />;
   if (page === 3) return <WeekCalendarPanel data={data} />;
   if (page === 4) return <StocksPanel data={data} />;
-  if (page === 6) return <PhotoPanel photoSrc={photoSrc ?? DEFAULT_PHOTO_SRC} />;
-  return <DeviceDetails deviceStatus={deviceStatus} page={page} />;
+  if (page === 5) return <StockChartsPanel data={data} group={0} />;
+  if (page === 6) return <StockChartsPanel data={data} group={1} />;
+  if (page === 7) return <StockChartsPanel data={data} group={2} />;
+  return <StocksPanel data={data} />;
 }
 
 export function ScreenView({ data, deviceStatus, photoSrc = DEFAULT_PHOTO_SRC }: ScreenViewProps) {

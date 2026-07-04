@@ -50,6 +50,12 @@ export type StockQuote = {
   direction: "up" | "down" | "flat" | "unknown";
   tradedAt: string | null;
   history: number[];
+  candles: Array<{
+    o: number;
+    h: number;
+    l: number;
+    c: number;
+  }>;
   investorFlow?: {
     date: string | null;
     unit: "shares" | "hundredMillionKrw";

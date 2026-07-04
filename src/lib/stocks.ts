@@ -39,6 +39,9 @@ type YahooChartResponse = {
       };
       indicators?: {
         quote?: Array<{
+          open?: Array<number | null>;
+          high?: Array<number | null>;
+          low?: Array<number | null>;
           close?: Array<number | null>;
         }>;
       };
@@ -330,15 +333,17 @@ async function getStockQuote(
   const data = (await response.json()) as NaverStockResponse;
   const item = data.datas?.[0] ?? {};
   let history: number[] = [];
+  let candles: StockQuote["candles"] = [];
   let investorFlow: InvestorFlow | undefined;
 
   const [historyResult, investorFlowResult] = await Promise.allSettled([
-    yahooCode ? getYahooSnapshot(yahooCode, options) : Promise.resolve({ history: [] }),
+    yahooCode ? getYahooSnapshot(yahooCode, options) : Promise.resolve({ history: [], candles: [] }),
     getStockInvestorFlow(code, options)
   ]);
 
   if (historyResult.status === "fulfilled") {
     history = historyResult.value.history;
+    candles = historyResult.value.candles;
   }
 
   if (investorFlowResult.status === "fulfilled") {
@@ -356,6 +361,7 @@ async function getStockQuote(
     direction: directionFrom(item),
     tradedAt: item.localTradedAt ?? null,
     history,
+    candles,
     investorFlow
   };
 }
@@ -396,7 +402,12 @@ type YahooSnapshot = {
   market: string | null;
   tradedAt: string | null;
   history: number[];
+  candles: StockQuote["candles"];
 };
+
+function compactMarketNumber(value: number): number {
+  return Number(value.toFixed(4));
+}
 
 async function getYahooChart(
   code: string,
@@ -435,9 +446,37 @@ async function getYahooSnapshot(
     result = data.chart?.result?.[0];
   }
 
-  const history = (result?.indicators?.quote?.[0]?.close ?? []).filter(
+  const quote = result?.indicators?.quote?.[0];
+  const history = (quote?.close ?? []).filter(
     (value): value is number => typeof value === "number"
-  );
+  ).map(compactMarketNumber);
+  const opens = quote?.open ?? [];
+  const highs = quote?.high ?? [];
+  const lows = quote?.low ?? [];
+  const closesForCandles = quote?.close ?? [];
+  const candles = closesForCandles
+    .map((close, index) => {
+      const open = opens[index];
+      const high = highs[index];
+      const low = lows[index];
+      if (
+        typeof open !== "number" ||
+        typeof high !== "number" ||
+        typeof low !== "number" ||
+        typeof close !== "number"
+      ) {
+        return null;
+      }
+
+      return {
+        o: compactMarketNumber(open),
+        h: compactMarketNumber(high),
+        l: compactMarketNumber(low),
+        c: compactMarketNumber(close)
+      };
+    })
+    .filter((value): value is StockQuote["candles"][number] => value !== null)
+    .slice(-36);
   const latestClose = latestNumber(history);
   const previousSeriesClose = history.length >= 2 ? history[history.length - 2] : undefined;
   const price = result?.meta?.regularMarketPrice ?? latestClose;
@@ -451,7 +490,8 @@ async function getYahooSnapshot(
     tradedAt: result?.meta?.regularMarketTime
       ? new Date(result.meta.regularMarketTime * 1000).toISOString()
       : null,
-    history
+    history: history.slice(-48),
+    candles
   };
 }
 
@@ -494,6 +534,7 @@ async function getYahooQuote(
     direction: directionFromChange(change),
     tradedAt: snapshot.tradedAt,
     history: snapshot.history,
+    candles: snapshot.candles,
     investorFlow
   };
 }
