@@ -1328,7 +1328,10 @@ function MarketScaleTile({
   );
 }
 
-function DetailedStockChart({ stock, width, height }: { stock: StockQuote; width: number; height: number }) {
+const STOCK_CHART_AXIS_WIDTH = 44;
+
+function DetailedStockChart({ stock, width: outerWidth, height }: { stock: StockQuote; width: number; height: number }) {
+  const width = outerWidth - STOCK_CHART_AXIS_WIDTH;
   const range = marketGraphPercentRange(stock);
   const midY = Math.round(height / 2);
   const candleCount = Math.min(stock.candles?.length ?? 0, 36);
@@ -1382,15 +1385,38 @@ function DetailedStockChart({ stock, width, height }: { stock: StockQuote; width
       `</svg>`
   );
 
+  const axisTicks = baselinePrice
+    ? [
+        { y: 5, price: formatChartPrice(baselinePrice * (1 + range / 100)) },
+        { y: midY, price: formatChartPrice(baselinePrice) },
+        { y: height - 5, price: formatChartPrice(baselinePrice * (1 - range / 100)) }
+      ]
+    : [];
+
   return (
-    <div style={{ width, height, position: "relative", display: "flex", overflow: "hidden" }}>
+    <div style={{ width: outerWidth, height, position: "relative", display: "flex", overflow: "hidden" }}>
       {/* eslint-disable-next-line @next/next/no-img-element -- data URI SVG keeps chart rendering deterministic in next/og. */}
       <img src={imageSrc} alt="" width={width} height={height} style={{ width, height }} />
+      {axisTicks.map((tick, tickIndex) => (
+        <span
+          key={tickIndex}
+          style={{
+            position: "absolute",
+            left: width + 5,
+            top: tick.y - 5,
+            fontSize: 9,
+            lineHeight: 1,
+            whiteSpace: "nowrap"
+          }}
+        >
+          {tick.price}
+        </span>
+      ))}
     </div>
   );
 }
 
-function stockChartLabels(stock: StockQuote): Array<{ time: string; price: string }> {
+function stockChartLabels(stock: StockQuote): Array<{ time: string }> {
   const candles = stock.candles?.filter((candle) => Number.isFinite(candle.c)) ?? [];
   if (candles.length > 1) {
     const indexes = Array.from(new Set([
@@ -1399,8 +1425,7 @@ function stockChartLabels(stock: StockQuote): Array<{ time: string; price: strin
       candles.length - 1
     ]));
     return indexes.map((index) => ({
-      time: candles[index].t || "--:--",
-      price: formatChartPrice(candles[index].c)
+      time: candles[index].t || "--:--"
     }));
   }
 
@@ -1409,15 +1434,7 @@ function stockChartLabels(stock: StockQuote): Array<{ time: string; price: strin
     return [];
   }
 
-  const indexes = Array.from(new Set([
-    0,
-    Math.floor((values.length - 1) / 2),
-    values.length - 1
-  ]));
-  return indexes.map((index) => ({
-    time: index === 0 ? "start" : index === values.length - 1 ? "now" : "mid",
-    price: formatChartPrice(values[index])
-  }));
+  return [{ time: "시작" }, { time: "중간" }, { time: "현재" }];
 }
 
 function StockChartTile({
@@ -1479,20 +1496,18 @@ function StockChartTile({
         </div>
       </div>
       <DetailedStockChart stock={stock} width={width - 16} height={height - 100} />
-      <div style={{ display: "flex", justifyContent: "space-between", gap: 4, fontSize: 9, lineHeight: 1 }}>
+      <div
+        style={{
+          display: "flex",
+          justifyContent: "space-between",
+          gap: 4,
+          fontSize: 9,
+          lineHeight: 1,
+          width: width - 16 - STOCK_CHART_AXIS_WIDTH
+        }}
+      >
         {labels.map((label, labelIndex) => (
-          <div
-            key={`${label.time}-${labelIndex}`}
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              minWidth: 0,
-              textAlign: labelIndex === 0 ? "left" : labelIndex === labels.length - 1 ? "right" : "center"
-            }}
-          >
-            <span>{label.time}</span>
-            <span>{label.price}</span>
-          </div>
+          <span key={`${label.time}-${labelIndex}`}>{label.time}</span>
         ))}
       </div>
       {stock.investorFlow ? (
