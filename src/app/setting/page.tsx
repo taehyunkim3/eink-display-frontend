@@ -7,6 +7,7 @@ const BLE_SERVICE_UUID = "7b1e0001-9adb-4c9a-8b3f-e1c5a1f3d0aa";
 const BLE_CONFIG_UUID = "7b1e0002-9adb-4c9a-8b3f-e1c5a1f3d0aa";
 const BLE_STATUS_UUID = "7b1e0003-9adb-4c9a-8b3f-e1c5a1f3d0aa";
 
+// Must match SCREEN_PAGE_COUNT and page order in the firmware.
 const PAGE_TITLES = [
   "요약",
   "주간날씨",
@@ -16,7 +17,8 @@ const PAGE_TITLES = [
   "차트1",
   "차트2",
   "차트3",
-  "뉴스"
+  "뉴스",
+  "추세 (SD 기록)"
 ] as const;
 
 const REFRESH_OPTIONS = [
