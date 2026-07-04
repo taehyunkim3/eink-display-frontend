@@ -54,8 +54,8 @@ const START_PAGE_OPTIONS = [
 
 const DEEP_SLEEP_OPTIONS = [
   { value: "", label: "변경 안 함" },
-  { value: "0", label: "끄기 (버튼 즉시 반응)" },
-  { value: "1", label: "켜기 (배터리 절약, 버튼 반응 없음)" }
+  { value: "0", label: "끄기 (기본, 버튼 즉시 반응)" },
+  { value: "1", label: "켜기 (배터리 절약, 버튼 반응 느림)" }
 ];
 
 type ConnectionState = "idle" | "connecting" | "connected" | "error";
@@ -496,9 +496,10 @@ export default function SettingPage() {
           </div>
           {deepSleep === "1" && (
             <p className="mt-3 border-2 border-neutral-900 bg-neutral-100 p-3 text-sm">
-              Deep Sleep을 켜면 갱신 주기 사이에 기기가 완전히 잠들어 배터리는 크게 절약되지만,
-              버튼(페이지 이동/설정 진입)이 즉시 반응하지 않아요. 설정 모드에 다시 진입하려면
-              기기가 깨어난 직후에 버튼을 눌러야 해요.
+              Deep Sleep을 켜면 갱신 주기 사이에 기기가 완전히 잠들어 배터리가 크게 절약돼요.
+              버튼을 누르면 깨어나서 동작하지만(페이지 이동, 새로고침, 설정 진입), 부팅과 데이터
+              재다운로드 때문에 반응까지 5~10초 정도 걸려요. 설정 모드는 왼쪽+오른쪽 버튼을 함께
+              누른 채로 잠시 유지하면 진입돼요.
             </p>
           )}
 
