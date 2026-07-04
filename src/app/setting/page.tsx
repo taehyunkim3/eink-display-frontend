@@ -58,6 +58,16 @@ const DEEP_SLEEP_OPTIONS = [
   { value: "1", label: "켜기 (배터리 절약, 버튼 반응 느림)" }
 ];
 
+const OTA_OPTIONS = [
+  { value: "", label: "변경 안 함" },
+  { value: "0", label: "끄기" },
+  { value: "6", label: "6시간마다" },
+  { value: "12", label: "12시간마다" },
+  { value: "24", label: "24시간마다 (권장)" },
+  { value: "72", label: "3일마다" },
+  { value: "168", label: "7일마다" }
+];
+
 const NIGHT_MODE_OPTIONS = [
   { value: "", label: "변경 안 함" },
   { value: "off", label: "끄기" },
@@ -81,6 +91,8 @@ type DeviceConfig = {
   deepSleep?: boolean;
   nightStart?: number;
   nightEnd?: number;
+  otaHours?: number;
+  fwVersion?: string;
 };
 
 function statusCodeToMessage(code: string): string {
@@ -115,6 +127,8 @@ export default function SettingPage() {
   const [rotateSec, setRotateSec] = useState("");
   const [deepSleep, setDeepSleep] = useState("");
   const [nightMode, setNightMode] = useState("");
+  const [otaHours, setOtaHours] = useState("");
+  const [fwVersion, setFwVersion] = useState("");
   // null = 변경 안 함, otherwise a 9-bit visibility array
   const [visiblePages, setVisiblePages] = useState<boolean[] | null>(null);
 
@@ -146,6 +160,8 @@ export default function SettingPage() {
         config.nightStart < 0 ? "off" : `${config.nightStart}-${config.nightEnd}`
       );
     }
+    if (typeof config.otaHours === "number") setOtaHours(String(config.otaHours));
+    if (typeof config.fwVersion === "string") setFwVersion(config.fwVersion);
     if (typeof config.pageMask === "number") {
       setVisiblePages(PAGE_TITLES.map((_, index) => ((config.pageMask! >> index) & 1) === 1));
     }
@@ -268,6 +284,7 @@ export default function SettingPage() {
         payload.nightEnd = end;
       }
     }
+    if (otaHours) payload.otaHours = Number(otaHours);
     if (visiblePages) {
       const mask = visiblePages.reduce((acc, visible, index) => (visible ? acc | (1 << index) : acc), 0);
       if (mask === 0) {
@@ -293,6 +310,7 @@ export default function SettingPage() {
     rotateSec,
     deepSleep,
     nightMode,
+    otaHours,
     visiblePages,
     writePayload
   ]);
@@ -530,6 +548,20 @@ export default function SettingPage() {
                 className={selectClass}
               >
                 {NIGHT_MODE_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className={labelClass}>
+              펌웨어 자동 업데이트 확인{fwVersion ? ` (현재 v${fwVersion})` : ""}
+              <select
+                value={otaHours}
+                onChange={(event) => setOtaHours(event.target.value)}
+                className={selectClass}
+              >
+                {OTA_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
                     {option.label}
                   </option>
