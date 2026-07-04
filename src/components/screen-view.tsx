@@ -626,7 +626,7 @@ function TrendArrow({ direction }: { direction: string | null }) {
 function OverviewPanel({ data }: { data: DashboardData }) {
   const nextEvents = data.events.slice(0, 3);
   const marketStocks = data.stocks.slice(0, 3);
-  const headlines = data.news?.slice(0, 2) ?? [];
+  const headlines = data.news?.slice(0, data.quote ? 1 : 2) ?? [];
   const todayForecast = data.weather.daily[0];
   const hourly = todayForecast?.hourly?.slice(0, 3) ?? [];
 
@@ -821,9 +821,25 @@ function OverviewPanel({ data }: { data: DashboardData }) {
                 </span>
               </div>
             ))
-          ) : (
+          ) : !data.quote ? (
             <span style={{ fontSize: 13, fontWeight: EINK_BOLD_WEIGHT }}>뉴스 정보 없음</span>
-          )}
+          ) : null}
+          {data.quote ? (
+            <div style={{ display: "flex", gap: 10, alignItems: "baseline", lineHeight: 1.35 }}>
+              <span style={{ fontSize: 11, fontWeight: EINK_BOLD_WEIGHT, minWidth: 38 }}>명언</span>
+              <span
+                style={{
+                  fontSize: 14,
+                  fontWeight: EINK_TEXT_WEIGHT,
+                  whiteSpace: "nowrap",
+                  overflow: "hidden",
+                  textOverflow: "ellipsis"
+                }}
+              >
+                {data.quote}
+              </span>
+            </div>
+          ) : null}
         </div>
       </div>
     </section>

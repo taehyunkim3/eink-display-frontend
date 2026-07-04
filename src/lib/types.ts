@@ -81,6 +81,7 @@ export type DashboardData = {
   news: NewsHeadline[];
   marketSummary: string | null;
   weatherAlert: string | null;
+  quote: string | null;
   notices: string[];
 };
 

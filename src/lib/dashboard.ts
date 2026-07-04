@@ -1,5 +1,6 @@
 import { getCalendarEvents, hasCalendarIcalUrls } from "./calendar";
 import { getNewsHeadlines } from "./news";
+import { getDailyQuote } from "./quote";
 import { getStockQuotes } from "./stocks";
 import { getMarketSummary } from "./summary";
 import { getWeather } from "./weather";
@@ -112,6 +113,7 @@ export async function getDashboardData(options: DashboardOptions = {}): Promise<
     news,
     marketSummary,
     weatherAlert: weatherAlertFrom(weather),
+    quote: getDailyQuote(),
     notices
   };
 }
