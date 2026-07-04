@@ -79,6 +79,7 @@ export type DashboardData = {
   events: CalendarEvent[];
   stocks: StockQuote[];
   news: NewsHeadline[];
+  marketSummary: string | null;
   notices: string[];
 };
 

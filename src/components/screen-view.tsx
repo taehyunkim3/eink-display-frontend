@@ -1914,6 +1914,25 @@ function NewsPanel({ data }: { data: DashboardData }) {
 
   return (
     <PanelShell title="증시 뉴스" subtitle="주요 헤드라인">
+      {data.marketSummary ? (
+        <div style={{ border: "1px solid #111", marginTop: 8 }}>
+          <div
+            style={{
+              background: "#111",
+              color: "#fff",
+              display: "inline-block",
+              padding: "2px 10px",
+              fontSize: 12,
+              fontWeight: EINK_BOLD_WEIGHT
+            }}
+          >
+            AI 시황
+          </div>
+          <div style={{ padding: "6px 12px", fontSize: 14, fontWeight: EINK_TEXT_WEIGHT, whiteSpace: "pre-line", lineHeight: 1.4 }}>
+            {data.marketSummary}
+          </div>
+        </div>
+      ) : null}
       {headlines.length > 0 ? (
         <div style={{ display: "flex", flexDirection: "column", marginTop: 8 }}>
           {headlines.map((headline, index) => (

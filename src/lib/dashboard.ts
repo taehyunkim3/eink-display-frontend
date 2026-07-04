@@ -1,6 +1,7 @@
 import { getCalendarEvents, hasCalendarIcalUrls } from "./calendar";
 import { getNewsHeadlines } from "./news";
 import { getStockQuotes } from "./stocks";
+import { getMarketSummary } from "./summary";
 import { getWeather } from "./weather";
 import type { DashboardData, WeatherSnapshot } from "./types";
 
@@ -77,6 +78,13 @@ export async function getDashboardData(options: DashboardOptions = {}): Promise<
     notices.push(newsResult.reason instanceof Error ? newsResult.reason.message : "News failed");
   }
 
+  let marketSummary: string | null = null;
+  try {
+    marketSummary = await getMarketSummary(news, stocks);
+  } catch (error) {
+    notices.push(error instanceof Error ? error.message : "Market summary failed");
+  }
+
   return {
     generatedAt: new Date().toISOString(),
     refreshSeconds: refreshSeconds(),
@@ -84,6 +92,7 @@ export async function getDashboardData(options: DashboardOptions = {}): Promise<
     events,
     stocks,
     news,
+    marketSummary,
     notices
   };
 }
