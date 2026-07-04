@@ -19,6 +19,24 @@ function fallbackWeather(message: string): WeatherSnapshot {
   };
 }
 
+function weatherAlertFrom(weather: WeatherSnapshot): string | null {
+  const today = weather.daily[0];
+  if (!today) return null;
+  if (typeof today.precipitationProbabilityPercent === "number" && today.precipitationProbabilityPercent >= 70) {
+    return `우산 챙기세요 · 강수 ${Math.round(today.precipitationProbabilityPercent)}%`;
+  }
+  if (typeof today.maxTemperatureC === "number" && today.maxTemperatureC >= 33) {
+    return `폭염 주의 · 최고 ${Math.round(today.maxTemperatureC)}C`;
+  }
+  if (typeof today.minTemperatureC === "number" && today.minTemperatureC <= -10) {
+    return `한파 주의 · 최저 ${Math.round(today.minTemperatureC)}C`;
+  }
+  if (typeof today.precipitationProbabilityPercent === "number" && today.precipitationProbabilityPercent >= 40) {
+    return `비 소식 있어요 · 강수 ${Math.round(today.precipitationProbabilityPercent)}%`;
+  }
+  return null;
+}
+
 function refreshSeconds(): number {
   const value = Number(process.env.DEVICE_REFRESH_SECONDS);
   return Number.isFinite(value) && value >= 60 ? Math.floor(value) : 1800;
@@ -93,6 +111,7 @@ export async function getDashboardData(options: DashboardOptions = {}): Promise<
     stocks,
     news,
     marketSummary,
+    weatherAlert: weatherAlertFrom(weather),
     notices
   };
 }

@@ -643,7 +643,11 @@ function OverviewPanel({ data }: { data: DashboardData }) {
       }}
     >
       <div style={{ display: "flex", gap: 10, height: 210 }}>
-        <OverviewCard title="오늘 날씨" right={data.weather.label} style={{ flex: 1 }}>
+        <OverviewCard
+          title="오늘 날씨"
+          right={data.weatherAlert ?? data.weather.label}
+          style={{ flex: 1 }}
+        >
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
             <WeatherIcon code={data.weather.weatherCode} size={48} />
             <div style={{ minWidth: 0 }}>
