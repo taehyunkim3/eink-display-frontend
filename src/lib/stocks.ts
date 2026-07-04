@@ -37,6 +37,7 @@ type YahooChartResponse = {
         currency?: string;
         exchangeName?: string;
       };
+      timestamp?: number[];
       indicators?: {
         quote?: Array<{
           open?: Array<number | null>;
@@ -409,6 +410,16 @@ function compactMarketNumber(value: number): number {
   return Number(value.toFixed(4));
 }
 
+function formatKoreaMarketTime(timestampSeconds: number | undefined): string {
+  if (typeof timestampSeconds !== "number" || !Number.isFinite(timestampSeconds)) return "--:--";
+  return new Intl.DateTimeFormat("en-GB", {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+    timeZone: "Asia/Seoul"
+  }).format(new Date(timestampSeconds * 1000));
+}
+
 async function getYahooChart(
   code: string,
   options: FetchFreshOptions,
@@ -454,6 +465,7 @@ async function getYahooSnapshot(
   const highs = quote?.high ?? [];
   const lows = quote?.low ?? [];
   const closesForCandles = quote?.close ?? [];
+  const timestamps = result?.timestamp ?? [];
   const candles = closesForCandles
     .map((close, index) => {
       const open = opens[index];
@@ -469,6 +481,7 @@ async function getYahooSnapshot(
       }
 
       return {
+        t: formatKoreaMarketTime(timestamps[index]),
         o: compactMarketNumber(open),
         h: compactMarketNumber(high),
         l: compactMarketNumber(low),

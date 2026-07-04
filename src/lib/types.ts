@@ -51,6 +51,7 @@ export type StockQuote = {
   tradedAt: string | null;
   history: number[];
   candles: Array<{
+    t: string;
     o: number;
     h: number;
     l: number;

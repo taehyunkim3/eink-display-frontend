@@ -1416,6 +1416,36 @@ function DetailedStockChart({ stock, width, height }: { stock: StockQuote; width
   );
 }
 
+function stockChartLabels(stock: StockQuote): Array<{ time: string; price: string }> {
+  const candles = stock.candles?.filter((candle) => Number.isFinite(candle.c)) ?? [];
+  if (candles.length > 1) {
+    const indexes = Array.from(new Set([
+      0,
+      Math.floor((candles.length - 1) / 2),
+      candles.length - 1
+    ]));
+    return indexes.map((index) => ({
+      time: candles[index].t || "--:--",
+      price: candles[index].c.toLocaleString("en-US", { maximumFractionDigits: 2 })
+    }));
+  }
+
+  const values = stock.history.filter((value) => Number.isFinite(value));
+  if (values.length < 2) {
+    return [];
+  }
+
+  const indexes = Array.from(new Set([
+    0,
+    Math.floor((values.length - 1) / 2),
+    values.length - 1
+  ]));
+  return indexes.map((index) => ({
+    time: index === 0 ? "start" : index === values.length - 1 ? "now" : "mid",
+    price: values[index].toLocaleString("en-US", { maximumFractionDigits: 2 })
+  }));
+}
+
 function StockChartTile({
   stock,
   index,
@@ -1432,6 +1462,7 @@ function StockChartTile({
   columnIndex: number;
 }) {
   const rate = formatSignedStockValue(stock, stock.changePercent, "%");
+  const labels = stockChartLabels(stock);
 
   return (
     <div
@@ -1473,7 +1504,23 @@ function StockChartTile({
           <span>{rate}</span>
         </div>
       </div>
-      <DetailedStockChart stock={stock} width={width - 16} height={height - 88} />
+      <DetailedStockChart stock={stock} width={width - 16} height={height - 100} />
+      <div style={{ display: "flex", justifyContent: "space-between", gap: 4, fontSize: 9, lineHeight: 1 }}>
+        {labels.map((label, labelIndex) => (
+          <div
+            key={`${label.time}-${labelIndex}`}
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              minWidth: 0,
+              textAlign: labelIndex === 0 ? "left" : labelIndex === labels.length - 1 ? "right" : "center"
+            }}
+          >
+            <span>{label.time}</span>
+            <span>{label.price}</span>
+          </div>
+        ))}
+      </div>
       {stock.investorFlow ? (
         <div style={{ display: "flex", fontSize: 9, lineHeight: 1, gap: 5, whiteSpace: "nowrap" }}>
           <InvestorFlowMetric label="개인" flow={stock.investorFlow} value={stock.investorFlow.retail} justifyContent="flex-start" />
