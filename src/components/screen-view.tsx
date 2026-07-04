@@ -81,10 +81,18 @@ function stockCategoryLabel(stock: StockQuote): string {
 function formatSignedStockValue(stock: StockQuote, value: string | null, suffix = ""): string {
   if (!value) return "--";
 
-  const unsignedValue = value.trim().replace(/^[+-]+/, "");
+  const unsignedValue = value.trim().replace(/^[+-]+/, "").replaceAll(",", "");
   if (stock.direction === "up") return `+${unsignedValue}${suffix}`;
   if (stock.direction === "down") return `-${unsignedValue}${suffix}`;
   return `${unsignedValue}${suffix}`;
+}
+
+function formatStockPrice(value: string | null): string {
+  return value ? value.replaceAll(",", "") : "--";
+}
+
+function formatChartPrice(value: number): string {
+  return Number(value.toFixed(value >= 1000 ? 0 : value >= 100 ? 1 : 2)).toString();
 }
 
 function formatInvestorFlowValue(flow: StockQuote["investorFlow"], value: number | null | undefined): string {
@@ -99,7 +107,7 @@ function formatInvestorFlowValue(flow: StockQuote["investorFlow"], value: number
       return `${sign}${Number((absoluteValue / 10_000).toFixed(1))}조`;
     }
 
-    return `${sign}${absoluteValue.toLocaleString("ko-KR")}억`;
+    return `${sign}${absoluteValue}억`;
   }
 
   if (absoluteValue >= 100_000_000) {
@@ -107,14 +115,14 @@ function formatInvestorFlowValue(flow: StockQuote["investorFlow"], value: number
   }
 
   if (absoluteValue >= 10_000) {
-    return `${sign}${Math.round(absoluteValue / 10_000).toLocaleString("ko-KR")}만`;
+    return `${sign}${Math.round(absoluteValue / 10_000)}만`;
   }
 
   if (absoluteValue >= 1_000) {
     return `${sign}${Math.round(absoluteValue / 1_000)}천`;
   }
 
-  return `${sign}${absoluteValue.toLocaleString("ko-KR")}`;
+  return `${sign}${absoluteValue}`;
 }
 
 function investorFlowValueParts(flow: StockQuote["investorFlow"], value: number | null | undefined) {
@@ -231,10 +239,11 @@ function TodayCellBorder() {
       style={{
         position: "absolute",
         top: 1,
-        right: 1,
-        bottom: 1,
         left: 1,
-        border: "3px solid #111",
+        width: "calc(100% - 2px)",
+        height: "calc(100% - 2px)",
+        borderTop: "3px solid #111",
+        borderLeft: "3px solid #111",
         boxSizing: "border-box"
       }}
     />
@@ -871,64 +880,48 @@ function CalendarPanel({ data }: { data: DashboardData }) {
                     borderRight: `1px ${borderStyle} #111`,
                     borderBottom: `1px ${borderStyle} #111`,
                     boxSizing: "border-box",
-                    padding: "4px 5px",
+                    padding: "2px 3px",
                     display: "flex",
                     flexDirection: "column",
-                    gap: 3
+                    gap: 2
                   }}
                 >
                   <div
                     style={{
                       display: "flex",
-                      fontSize: isFirstDayOfMonth ? 12 : 14,
+                      fontSize: isFirstDayOfMonth ? 10 : 12,
                       fontWeight: EINK_BOLD_WEIGHT,
                       lineHeight: 1
                     }}
                   >
                     {calendarDayLabel(cell)}
                   </div>
-                  {dayEvents.slice(0, 2).map((event) => (
+                  {dayEvents.slice(0, 4).map((event) => (
                     <div
                       key={event.uid}
                       style={{
                         display: "flex",
-                        flexDirection: "column",
-                        borderLeft: "2px solid #111",
-                        paddingLeft: 3,
                         minWidth: 0,
                         fontWeight: EINK_TEXT_WEIGHT,
-                        lineHeight: 1.05
+                        lineHeight: 1
                       }}
                     >
                       <div
                         style={{
                           display: "flex",
                           minWidth: 0,
-                          fontSize: 10,
+                          fontSize: 9,
                           whiteSpace: "nowrap",
                           overflow: "hidden",
                           textOverflow: "ellipsis"
                         }}
                       >
-                        {event.title}
-                      </div>
-                      <div
-                        style={{
-                          display: "flex",
-                          minWidth: 0,
-                          fontSize: 8,
-                          color: "#111",
-                          whiteSpace: "nowrap",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis"
-                        }}
-                      >
-                        {`${calendarEventTimeLabel(event)} · ${event.calendarName ?? "캘린더"}`}
+                        {`${calendarEventTimeLabel(event)} ${event.title}`}
                       </div>
                     </div>
                   ))}
-                  {dayEvents.length > 2 ? (
-                    <div style={{ display: "flex", fontSize: 10, fontWeight: EINK_BOLD_WEIGHT }}>{`+${dayEvents.length - 2}`}</div>
+                  {dayEvents.length > 4 ? (
+                    <div style={{ display: "flex", fontSize: 9, fontWeight: EINK_BOLD_WEIGHT }}>{`+${dayEvents.length - 4}`}</div>
                   ) : null}
                   {isToday ? <TodayCellBorder /> : null}
                 </div>
@@ -991,20 +984,20 @@ function WeekCalendarPanel({ data }: { data: DashboardData }) {
             >
               <div
                 style={{
-                  height: 36,
+                  height: 30,
                   boxSizing: "border-box",
                   borderBottom: "1px solid #111",
-                  padding: "4px 5px",
+                  padding: "3px 4px",
                   display: "flex",
                   flexDirection: "column",
                   justifyContent: "center",
                   gap: 2
                 }}
               >
-                <div style={{ display: "flex", fontSize: 15, lineHeight: 1 }}>
+                <div style={{ display: "flex", fontSize: 13, lineHeight: 1 }}>
                   {WEEKDAY_LABELS[day.getDay()]}
                 </div>
-                <div style={{ display: "flex", fontSize: 12, lineHeight: 1 }}>
+                <div style={{ display: "flex", fontSize: 11, lineHeight: 1 }}>
                   {weekDayLabel(day)}
                 </div>
               </div>
@@ -1014,50 +1007,33 @@ function WeekCalendarPanel({ data }: { data: DashboardData }) {
                   minHeight: 0,
                   display: "flex",
                   flexDirection: "column",
-                  gap: 5,
-                  padding: "5px 4px"
+                  gap: 3,
+                  padding: "4px 3px"
                 }}
               >
                 {dayEvents.length > 0 ? (
-                  dayEvents.slice(0, 7).map((event) => (
+                  dayEvents.slice(0, 11).map((event) => (
                     <div
                       key={`${event.uid}-${dateKey(day)}`}
                       style={{
                         display: "flex",
-                        flexDirection: "column",
-                        gap: 2,
                         minWidth: 0,
-                        borderLeft: "3px solid #111",
-                        paddingLeft: 4,
-                        paddingBottom: 4,
                         borderBottom: "1px dashed #111",
-                        lineHeight: 1.05
+                        lineHeight: 1,
+                        paddingBottom: 2
                       }}
                     >
                       <div
                         style={{
                           display: "flex",
-                          fontSize: 11,
-                          minWidth: 0,
-                          whiteSpace: "nowrap",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis"
-                        }}
-                      >
-                        {event.title}
-                      </div>
-                      <div
-                        style={{
-                          display: "flex",
                           fontSize: 9,
-                          color: "#111",
                           minWidth: 0,
                           whiteSpace: "nowrap",
                           overflow: "hidden",
                           textOverflow: "ellipsis"
                         }}
                       >
-                        {`${calendarEventTimeLabel(event)} · ${event.calendarName ?? "캘린더"}`}
+                        {`${calendarEventTimeLabel(event)} ${event.title}`}
                       </div>
                     </div>
                   ))
@@ -1075,8 +1051,8 @@ function WeekCalendarPanel({ data }: { data: DashboardData }) {
                     일정 없음
                   </div>
                 )}
-                {dayEvents.length > 7 ? (
-                  <div style={{ display: "flex", fontSize: 11 }}>{`+${dayEvents.length - 7}`}</div>
+                {dayEvents.length > 11 ? (
+                  <div style={{ display: "flex", fontSize: 9 }}>{`+${dayEvents.length - 11}`}</div>
                 ) : null}
               </div>
               {isToday ? <TodayCellBorder /> : null}
@@ -1125,7 +1101,7 @@ function StockRow({ stock, compact = false }: { stock: StockQuote; compact?: boo
         </div>
       </div>
       <div style={{ width: compact ? 74 : 92, textAlign: "right", fontSize: compact ? 17 : 21 }}>
-        {stock.price ?? "--"}
+        {formatStockPrice(stock.price)}
       </div>
       {!compact ? (
         <div style={{ width: 118, display: "flex", justifyContent: "flex-end" }}>
@@ -1199,8 +1175,6 @@ function MarketTile({
   const change = formatSignedStockValue(stock, stock.change);
   const rate = formatSignedStockValue(stock, stock.changePercent, "%");
   const hasInvestorFlow = Boolean(stock.investorFlow);
-  const graphHeight = hasInvestorFlow ? 43 : 55;
-  const graphWidth = width - 12;
 
   return (
     <div
@@ -1251,19 +1225,33 @@ function MarketTile({
             justifyContent: "flex-end",
             textAlign: "right",
             fontSize: 18,
+            fontWeight: EINK_HEAVY_WEIGHT,
             lineHeight: 1
           }}
         >
-          {stock.price ?? "--"}
+          {formatStockPrice(stock.price)}
         </div>
       </div>
-      <PercentSparkline stock={stock} width={graphWidth} height={graphHeight} />
+      <div
+        style={{
+          display: "flex",
+          alignItems: "baseline",
+          justifyContent: "space-between",
+          gap: 8,
+          borderTop: "1px solid #111",
+          borderBottom: "1px solid #111",
+          padding: "5px 0",
+          lineHeight: 1
+        }}
+      >
+        <span style={{ fontSize: 18, fontWeight: EINK_HEAVY_WEIGHT }}>{stockDirectionLabel(stock)}</span>
+        <span style={{ fontSize: 19, fontWeight: EINK_HEAVY_WEIGHT }}>{rate}</span>
+        <span style={{ fontSize: 14 }}>변동 {change}</span>
+      </div>
       {hasInvestorFlow ? (
         <div
           style={{
             display: "flex",
-            borderTop: "1px dashed #111",
-            borderBottom: "1px dashed #111",
             padding: "2px 0",
             fontSize: 9,
             lineHeight: 1,
@@ -1291,23 +1279,9 @@ function MarketTile({
           />
         </div>
       ) : null}
-      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "flex-end" }}>
-        <div
-          style={{
-            textAlign: "right",
-            fontSize: 12,
-            display: "flex",
-            gap: 4,
-            alignItems: "flex-end",
-            justifyContent: "flex-end",
-            lineHeight: 1
-          }}
-        >
-          <span>
-            {stockDirectionLabel(stock)} {rate}
-          </span>
-          <span>{change}</span>
-        </div>
+      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 10, lineHeight: 1 }}>
+        <span>{stock.category === "equity" ? "종목" : stockCategoryLabel(stock)}</span>
+        <span>{stock.market || stock.code}</span>
       </div>
     </div>
   );
@@ -1341,10 +1315,10 @@ function MarketScaleTile({
         fontWeight: EINK_BOLD_WEIGHT
       }}
     >
-      <div style={{ display: "flex", fontSize: 16 }}>그래프 기준</div>
+      <div style={{ display: "flex", fontSize: 16 }}>표기 기준</div>
       <div style={{ display: "flex", flexDirection: "column", gap: 4, fontSize: 13, lineHeight: 1.1 }}>
-        <span>점선: 전일 종가 0%</span>
-        <span>그래프: 1일 15분봉</span>
+        <span>가격: 쉼표 생략</span>
+        <span>등락: 전일 종가 대비</span>
         <span>개인/기관/외인 순매수</span>
       </div>
       <div style={{ display: "flex", justifyContent: "flex-end", fontSize: 18 }}>
@@ -1426,7 +1400,7 @@ function stockChartLabels(stock: StockQuote): Array<{ time: string; price: strin
     ]));
     return indexes.map((index) => ({
       time: candles[index].t || "--:--",
-      price: candles[index].c.toLocaleString("en-US", { maximumFractionDigits: 2 })
+      price: formatChartPrice(candles[index].c)
     }));
   }
 
@@ -1442,7 +1416,7 @@ function stockChartLabels(stock: StockQuote): Array<{ time: string; price: strin
   ]));
   return indexes.map((index) => ({
     time: index === 0 ? "start" : index === values.length - 1 ? "now" : "mid",
-    price: values[index].toLocaleString("en-US", { maximumFractionDigits: 2 })
+    price: formatChartPrice(values[index])
   }));
 }
 
@@ -1500,7 +1474,7 @@ function StockChartTile({
           </div>
         </div>
         <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", fontSize: 13, lineHeight: 1.1 }}>
-          <span>{stock.price ?? "--"}</span>
+          <span>{formatStockPrice(stock.price)}</span>
           <span>{rate}</span>
         </div>
       </div>
