@@ -6,7 +6,11 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "bridge": "node bridge/agent-status-bridge.mjs",
+    "bridge:install": "bash bridge/launchd.sh install",
+    "bridge:uninstall": "bash bridge/launchd.sh uninstall",
+    "bridge:status": "bash bridge/launchd.sh status"
   },
   "dependencies": {
     "next": "^16.1.6",

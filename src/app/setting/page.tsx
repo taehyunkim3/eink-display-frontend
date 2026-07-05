@@ -18,7 +18,7 @@ const PAGE_TITLES = [
   "차트2",
   "차트3",
   "뉴스",
-  "추세 (SD 기록)"
+  "에이전트"
 ] as const;
 
 const REFRESH_OPTIONS = [
@@ -70,6 +70,15 @@ const OTA_OPTIONS = [
   { value: "168", label: "7일마다" }
 ];
 
+const AGENT_POLL_OPTIONS = [
+  { value: "", label: "변경 안 함" },
+  { value: "2", label: "2초 (가장 빠름)" },
+  { value: "3", label: "3초 (권장)" },
+  { value: "5", label: "5초" },
+  { value: "10", label: "10초" },
+  { value: "30", label: "30초" }
+];
+
 const NIGHT_MODE_OPTIONS = [
   { value: "", label: "변경 안 함" },
   { value: "off", label: "끄기" },
@@ -94,7 +103,10 @@ type DeviceConfig = {
   nightStart?: number;
   nightEnd?: number;
   otaHours?: number;
+  bridge?: string;
+  agentPollSec?: number;
   fwVersion?: string;
+  wifiList?: string[];
 };
 
 function statusCodeToMessage(code: string): string {
@@ -130,7 +142,10 @@ export default function SettingPage() {
   const [deepSleep, setDeepSleep] = useState("");
   const [nightMode, setNightMode] = useState("");
   const [otaHours, setOtaHours] = useState("");
+  const [bridge, setBridge] = useState("");
+  const [agentPollSec, setAgentPollSec] = useState("");
   const [fwVersion, setFwVersion] = useState("");
+  const [wifiList, setWifiList] = useState<string[]>([]);
   // null = 변경 안 함, otherwise a 9-bit visibility array
   const [visiblePages, setVisiblePages] = useState<boolean[] | null>(null);
 
@@ -163,7 +178,10 @@ export default function SettingPage() {
       );
     }
     if (typeof config.otaHours === "number") setOtaHours(String(config.otaHours));
+    if (typeof config.bridge === "string") setBridge(config.bridge);
+    if (typeof config.agentPollSec === "number") setAgentPollSec(String(config.agentPollSec));
     if (typeof config.fwVersion === "string") setFwVersion(config.fwVersion);
+    if (Array.isArray(config.wifiList)) setWifiList(config.wifiList.filter((s) => typeof s === "string"));
     if (typeof config.pageMask === "number") {
       setVisiblePages(PAGE_TITLES.map((_, index) => ((config.pageMask! >> index) & 1) === 1));
     }
@@ -287,6 +305,8 @@ export default function SettingPage() {
       }
     }
     if (otaHours) payload.otaHours = Number(otaHours);
+    if (bridge.trim()) payload.bridge = bridge.trim();
+    if (agentPollSec) payload.agentPollSec = Number(agentPollSec);
     if (visiblePages) {
       const mask = visiblePages.reduce((acc, visible, index) => (visible ? acc | (1 << index) : acc), 0);
       if (mask === 0) {
@@ -313,6 +333,8 @@ export default function SettingPage() {
     deepSleep,
     nightMode,
     otaHours,
+    bridge,
+    agentPollSec,
     visiblePages,
     writePayload
   ]);
@@ -443,6 +465,16 @@ export default function SettingPage() {
                 className={inputClass}
               />
             </label>
+            <p className="text-xs text-neutral-500 md:col-span-2">
+              Wi-Fi는 기기에 최대 5개까지 저장돼요. 새 이름으로 저장하면 목록에 추가되고,
+              부팅 시 주변에 보이는 저장된 네트워크에 자동으로 연결돼요.
+              {wifiList.length > 0 && (
+                <>
+                  {" "}
+                  저장된 네트워크: <span className="font-mono">{wifiList.join(", ")}</span>
+                </>
+              )}
+            </p>
             <label className={`${labelClass} md:col-span-2`}>
               서버 주소 (screen.json 엔드포인트)
               <input
@@ -462,6 +494,34 @@ export default function SettingPage() {
                 placeholder="DEVICE_AUTH_TOKEN"
                 className={`${inputClass} font-mono text-sm`}
               />
+            </label>
+            <label className={`${labelClass} md:col-span-2`}>
+              에이전트 브리지 주소 (Codex/Cursor 상태, Mac LAN)
+              <input
+                value={bridge}
+                onChange={(event) => setBridge(event.target.value)}
+                placeholder="http://my-macbook.local:8788/agent-status.json"
+                className={`${inputClass} font-mono text-sm`}
+              />
+              <span className="text-xs font-normal text-neutral-500">
+                Mac에서 <code>npm run bridge</code>를 실행하면 주소가 출력돼요. IP 대신{" "}
+                <code>호스트이름.local</code>을 쓰면 Mac IP가 바뀌어도 계속 연결돼요 (Mac
+                호스트이름은 <code>scutil --get LocalHostName</code>으로 확인).
+              </span>
+            </label>
+            <label className={labelClass}>
+              에이전트 상태 폴링 주기
+              <select
+                value={agentPollSec}
+                onChange={(event) => setAgentPollSec(event.target.value)}
+                className={selectClass}
+              >
+                {AGENT_POLL_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
             </label>
           </div>
         </div>

@@ -31,7 +31,8 @@ export const SCREEN_PAGE_TITLES = [
   "차트1",
   "차트2",
   "차트3",
-  "뉴스"
+  "뉴스",
+  "에이전트"
 ] as const;
 export const SCREEN_PAGE_COUNT = SCREEN_PAGE_TITLES.length;
 const EINK_TEXT_WEIGHT = 600;
@@ -1993,6 +1994,22 @@ function NewsPanel({ data }: { data: DashboardData }) {
   );
 }
 
+// The agent page is rendered on-device from the local Mac bridge
+// (bridge/agent-status-bridge.mjs); the web preview only shows a guide.
+function AgentPanel({ data }: { data: DashboardData }) {
+  return (
+    <PanelShell title="에이전트" subtitle="Codex · Cursor 로컬 상태">
+      <EmptyState height={360}>
+        이 페이지는 기기에서 Mac 브리지(agent-status-bridge)로부터 직접 렌더링돼요.
+      </EmptyState>
+      <div style={{ marginTop: 12, fontSize: 12, fontWeight: EINK_TEXT_WEIGHT }}>
+        Mac에서 `npm run bridge` 실행 → 설정 페이지에서 브리지 주소 저장 · 데이터 기준{" "}
+        {formatGeneratedAt(data.generatedAt)}
+      </div>
+    </PanelShell>
+  );
+}
+
 function MainPanel({ page, data }: ScreenViewProps & { page: number }) {
   if (page === 0) return <OverviewPanel data={data} />;
   if (page === 1) return <WeeklyWeatherPanel data={data} />;
@@ -2003,6 +2020,7 @@ function MainPanel({ page, data }: ScreenViewProps & { page: number }) {
   if (page === 6) return <StockChartsPanel data={data} group={1} />;
   if (page === 7) return <StockChartsPanel data={data} group={2} />;
   if (page === 8) return <NewsPanel data={data} />;
+  if (page === 9) return <AgentPanel data={data} />;
   return <StocksPanel data={data} />;
 }
 
