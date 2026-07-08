@@ -38,3 +38,12 @@ export function formatEventTime(event: CalendarEvent): string {
 
   return `${KOREAN_DATE.format(date)} ${KOREAN_TIME.format(date)}`;
 }
+
+export function formatEventDate(event: CalendarEvent): string {
+  return KOREAN_DATE.format(new Date(event.startsAt));
+}
+
+export function formatEventTimeOnly(event: CalendarEvent): string {
+  if (event.allDay) return "종일";
+  return KOREAN_TIME.format(new Date(event.startsAt));
+}

@@ -6,7 +6,9 @@ import {
   wifiSignalPercent
 } from "@/lib/device-status";
 import {
+  formatEventDate,
   formatEventTime,
+  formatEventTimeOnly,
   formatGeneratedAt,
   formatPercent,
   formatTemperature,
@@ -722,9 +724,10 @@ function OverviewPanel({ data }: { data: DashboardData }) {
                     borderBottom: index < nextEvents.length - 1 ? "1px solid #111" : "none"
                   }}
                 >
-                  <span style={{ fontSize: 13, fontWeight: EINK_HEAVY_WEIGHT, minWidth: 44 }}>
-                    {formatEventTime(event)}
-                  </span>
+                  <div style={{ display: "flex", flexDirection: "column", minWidth: 62, fontWeight: EINK_HEAVY_WEIGHT, lineHeight: 1.2 }}>
+                    <span style={{ fontSize: 11 }}>{formatEventDate(event)}</span>
+                    <span style={{ fontSize: 13 }}>{formatEventTimeOnly(event)}</span>
+                  </div>
                   <div style={{ minWidth: 0 }}>
                     <div
                       style={{
@@ -2064,6 +2067,14 @@ export function ScreenView({ data, deviceStatus, photoSrc = DEFAULT_PHOTO_SRC }:
           </span>
           <span style={{ fontWeight: EINK_TEXT_WEIGHT }}>|</span>
           <span>{formatGeneratedAt(data.generatedAt)}</span>
+          <span style={{ fontWeight: EINK_TEXT_WEIGHT }}>|</span>
+          <span>{formatTemperature(data.weather.temperatureC)} {data.weather.condition}</span>
+          {data.weatherAlert ? (
+            <>
+              <span style={{ fontWeight: EINK_TEXT_WEIGHT }}>|</span>
+              <span>{data.weatherAlert}</span>
+            </>
+          ) : null}
         </div>
         <div style={{ display: "flex", gap: 16, alignItems: "center" }}>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
